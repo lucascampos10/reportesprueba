@@ -43,25 +43,27 @@ const LandingPage: React.FC = () => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Save order to global context mimicking backend save
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        addOrder({
-            title: `Reporte en ${location}`,
-            description,
-            category,
-            building,
-            department,
-            location,
-            reporterName,
-            contactMethod,
-            contactValue,
-            priority,
-            images,
-        });
-
-        setIsLoading(false);
-        setStep(2); // Success step
+        try {
+            await addOrder({
+                title: `Reporte en ${location}`,
+                description,
+                category,
+                building,
+                department,
+                location,
+                reporterName,
+                contactMethod,
+                contactValue,
+                priority,
+                images,
+            });
+            setStep(2); // Success step
+        } catch (error) {
+            console.error('Error submitting order:', error);
+            alert('Hubo un error al enviar el reporte. Por favor, intenta de nuevo.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const resetForm = () => {

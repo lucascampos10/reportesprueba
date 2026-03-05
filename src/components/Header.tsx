@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bell, User, Check, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
+import { supabase } from '../lib/supabase';
 import './Header.css';
 
 const Header: React.FC = () => {
@@ -11,6 +12,10 @@ const Header: React.FC = () => {
     const isWorker = location.pathname.startsWith('/operario');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+
+    // User profile state
+    const [userName, setUserName] = useState('');
+    const [userRole, setUserRole] = useState('');
     const dropdownRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +47,25 @@ const Header: React.FC = () => {
             case 'status_change': return '🔄';
             default: return 'ℹ️';
         }
+    };
+
+    useEffect(() => {
+        const fetchUserMenu = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('profiles').select('full_name, role').eq('id', user.id).single();
+                if (data) {
+                    setUserName(data.full_name || user.email?.split('@')[0] || '');
+                    setUserRole(data.role === 'admin' ? 'Super Administrador' : 'Operario');
+                }
+            }
+        };
+        fetchUserMenu();
+    }, []);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        navigate('/');
     };
 
     return (
@@ -103,13 +127,13 @@ const Header: React.FC = () => {
                             <User size={20} />
                         </div>
                         <div className="user-info">
-                            <span className="user-name">{isWorker ? 'Carlos Rodríguez' : 'Admin Novak'}</span>
-                            <span className="user-role">{isWorker ? 'Operario' : 'Super Administrador'}</span>
+                            <span className="user-name">{userName || (isWorker ? 'Operario' : 'Admin')}</span>
+                            <span className="user-role">{userRole || (isWorker ? 'Operario' : 'Super Administrador')}</span>
                         </div>
                     </div>
                     {isProfileMenuOpen && (
                         <div className="profile-dropdown">
-                            <button className="profile-dropdown-item" onClick={() => navigate('/')}>
+                            <button className="profile-dropdown-item" onClick={handleLogout}>
                                 <LogOut size={16} />
                                 Cerrar Sesión
                             </button>

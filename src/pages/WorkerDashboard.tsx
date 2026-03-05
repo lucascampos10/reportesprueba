@@ -8,15 +8,30 @@ import {
 } from 'lucide-react';
 import { useWorkOrders } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
+import { supabase } from '../lib/supabase';
 import './WorkerDashboard.css';
-
-// Simulated current worker name (in a real app this would come from auth)
-const CURRENT_WORKER = 'Carlos Rodríguez';
 
 const WorkerDashboard: React.FC = () => {
     const { orders, closeOrder } = useWorkOrders();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [currentWorkerId, setCurrentWorkerId] = useState<string>('');
+    const [currentWorkerName, setCurrentWorkerName] = useState('Operario');
+
+    React.useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setCurrentWorkerId(user.id);
+                // Try fetching full name
+                const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single();
+                if (data && data.full_name) {
+                    setCurrentWorkerName(data.full_name);
+                }
+            }
+        };
+        fetchUser();
+    }, []);
 
     // Close order modal
     const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
@@ -25,7 +40,7 @@ const WorkerDashboard: React.FC = () => {
     const [closeNotes, setCloseNotes] = useState('');
 
     // Filter orders assigned to this worker
-    const myOrders = orders.filter(o => o.assignedWorker === CURRENT_WORKER || o.assignedWorker === 'w1');
+    const myOrders = orders.filter(o => o.assignedToId === currentWorkerId);
     const pendingCount = myOrders.filter(o => o.status === 'pending').length;
     const inProgressCount = myOrders.filter(o => o.status === 'in_progress').length;
     const resolvedCount = myOrders.filter(o => o.status === 'resolved').length;
@@ -65,17 +80,22 @@ const WorkerDashboard: React.FC = () => {
         }
     };
 
-    const handleConfirmClose = () => {
+    const handleConfirmClose = async () => {
         if (!closeTarget) return;
-        closeOrder(closeTarget.id, closeImages, closeNotes);
-        setIsCloseModalOpen(false);
-        setCloseTarget(null);
+        try {
+            await closeOrder(closeTarget.id, closeImages, closeNotes);
+            setIsCloseModalOpen(false);
+            setCloseTarget(null);
+        } catch (error) {
+            console.error('Error cerrando orden:', error);
+            alert('Hubo un error al cerrar la orden.');
+        }
     };
 
     return (
         <div className="worker-dashboard animate-fade-in">
             <div className="worker-welcome">
-                <h1>👋 Hola, {CURRENT_WORKER}</h1>
+                <h1>👋 Hola, {currentWorkerName}</h1>
                 <p>Acá están tus órdenes de trabajo asignadas.</p>
             </div>
 

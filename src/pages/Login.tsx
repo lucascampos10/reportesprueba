@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { Mail, Lock } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -19,17 +20,38 @@ const Login: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // Mock login delay
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
-            if (email === 'admin@novak.com' && password === '123456') {
-                navigate('/admin');
-            } else if (email === 'operario@novak.com' && password === '123456') {
-                navigate('/operario');
-            } else {
+            if (authError) {
                 setError('Credenciales inválidas.');
+                return;
             }
-        } catch {
+
+            if (authData.user) {
+                // Fetch user role from profiles
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', authData.user.id)
+                    .single();
+
+                if (profileError || !profile) {
+                    console.error("Error fetching profile:", profileError);
+                    // Default fallback if no profile found
+                    navigate('/admin');
+                } else {
+                    if (profile.role === 'operario') {
+                        navigate('/operario');
+                    } else {
+                        navigate('/admin');
+                    }
+                }
+            }
+        } catch (err: any) {
+            console.error("Login catch error:", err);
             setError('Ocurrió un error al intentar iniciar sesión.');
         } finally {
             setIsLoading(false);

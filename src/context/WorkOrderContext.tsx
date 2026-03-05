@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNotifications } from './NotificationContext';
+import { supabase } from '../lib/supabase';
 
 export type Priority = 'baja' | 'media' | 'alta';
 export type ContactMethod = 'whatsapp' | 'email';
@@ -22,6 +23,7 @@ export interface WorkOrder {
     date: string;
     images: string[];
     assignedWorker?: string;
+    assignedToId?: string;
     resolvedImages?: string[];
     resolvedDate?: string;
     resolutionNotes?: string;
@@ -29,126 +31,157 @@ export interface WorkOrder {
 
 interface WorkOrderContextType {
     orders: WorkOrder[];
-    addOrder: (order: Omit<WorkOrder, 'id' | 'status' | 'date'>) => void;
-    updateOrderStatus: (id: string, status: OrderStatus) => void;
-    assignWorker: (orderId: string, workerId: string) => void;
-    closeOrder: (orderId: string, resolvedImages: string[], resolutionNotes: string) => void;
+    addOrder: (order: Omit<WorkOrder, 'id' | 'status' | 'date'>) => Promise<void>;
+    updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
+    assignWorker: (orderId: string, workerId: string) => Promise<void>;
+    closeOrder: (orderId: string, resolvedImages: string[], resolutionNotes: string) => Promise<void>;
+    fetchOrders: () => Promise<void>;
 }
-
-const mockOrders: WorkOrder[] = [
-    {
-        id: 'ORD-001',
-        title: 'Humedad en pared principal',
-        description: 'La pared presenta una gran mancha de humedad y se está descascarando la pintura. Parece que hay una filtración.',
-        category: 'Mantenimiento',
-        building: 'Torre Alvear',
-        department: 'PB',
-        location: 'Lobby Principal',
-        reporterName: 'Juan Pérez',
-        contactMethod: 'whatsapp',
-        contactValue: '+54 9 11 1234-5678',
-        status: 'pending',
-        date: new Date().toLocaleString(),
-        priority: 'alta',
-        images: ['https://images.unsplash.com/photo-1518552602711-1372e9ddff27?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80']
-    },
-    {
-        id: 'ORD-002',
-        title: 'Luminaria rota en pasillo',
-        description: 'Tres tubos fluorescentes fundidos en el pasillo. Se necesita reemplazo urgente por seguridad.',
-        category: 'Eléctrico',
-        building: 'Edificio Libertador',
-        department: '3er Piso',
-        location: 'Pasillo B',
-        reporterName: 'María Gómez',
-        contactMethod: 'email',
-        contactValue: 'maria@ejemplo.com',
-        status: 'pending',
-        date: new Date(Date.now() - 86400000).toLocaleString(), // Yesterday
-        priority: 'media',
-        images: []
-    },
-    {
-        id: 'ORD-003',
-        title: 'Mancha de humedad en techo',
-        description: 'Goteo constante en el techo del baño común. Se reparó la cañería y se repintó la zona afectada.',
-        category: 'Plomería',
-        building: 'Complejo Center',
-        department: 'Depto 2A',
-        location: 'Baño común planta baja',
-        reporterName: 'Carlos Ruiz',
-        contactMethod: 'whatsapp',
-        contactValue: '+54 9 11 5555-1234',
-        status: 'resolved',
-        date: new Date(Date.now() - 172800000).toLocaleString(),
-        priority: 'alta',
-        images: ['https://images.unsplash.com/photo-1585128792020-803d29415281?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
-        assignedWorker: 'Carlos Rodríguez',
-        resolvedImages: ['https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
-        resolvedDate: new Date(Date.now() - 86400000).toLocaleString(),
-        resolutionNotes: 'Se reparó la cañería con sellador epóxico y se repintó la zona afectada con pintura antihumedad.'
-    }
-];
 
 const WorkOrderContext = createContext<WorkOrderContextType | undefined>(undefined);
 
 export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [orders, setOrders] = useState<WorkOrder[]>(mockOrders);
+    const [orders, setOrders] = useState<WorkOrder[]>([]);
     const { addNotification } = useNotifications();
 
-    const addOrder = (newOrderData: Omit<WorkOrder, 'id' | 'status' | 'date'>) => {
-        const newOrder: WorkOrder = {
-            ...newOrderData,
-            id: `ORD-${String(orders.length + 1).padStart(3, '0')}`,
-            status: 'pending',
-            date: new Date().toLocaleString(),
-        };
-        setOrders([newOrder, ...orders]);
+    const fetchOrders = async () => {
+        // Only fetch if authenticated
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) return; // public page doesn't need to load all orders
+
+        const { data: workOrdersData, error } = await supabase
+            .from('work_orders')
+            .select(`
+                *,
+                assigned_profile:profiles!assigned_to(full_name)
+            `)
+            // The exclamation explicitly uses the foreign key relation
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching orders:', error);
+            // Ignore relations error if we haven't set them up perfectly
+            if (error.code === 'PGRST200') {
+                const { data: rawOrders } = await supabase.from('work_orders').select('*').order('created_at', { ascending: false });
+                if (rawOrders) processOrders(rawOrders);
+            }
+            return;
+        }
+
+        if (workOrdersData) {
+            processOrders(workOrdersData);
+        }
+    };
+
+    const processOrders = (data: any[]) => {
+        const mappedOrders: WorkOrder[] = data.map((o: any) => ({
+            id: o.id,
+            title: o.title,
+            description: o.description,
+            category: o.category || '',
+            building: o.building || '',
+            department: o.department || '',
+            location: o.location || '',
+            reporterName: o.reporter_name || '',
+            contactMethod: o.contact_method as ContactMethod,
+            contactValue: o.contact_value || '',
+            priority: o.priority as Priority,
+            status: o.status as OrderStatus,
+            date: new Date(o.created_at).toLocaleString(),
+            images: o.images || [],
+            assignedWorker: o.assigned_profile?.full_name || o.assigned_to || undefined,
+            assignedToId: o.assigned_to,
+            resolvedImages: o.resolution_images || [],
+            resolvedDate: o.resolved_at ? new Date(o.resolved_at).toLocaleString() : undefined,
+            resolutionNotes: o.resolution_notes || undefined
+        }));
+        setOrders(mappedOrders);
+    };
+
+    useEffect(() => {
+        fetchOrders();
+    }, []);
+
+    const addOrder = async (newOrderData: Omit<WorkOrder, 'id' | 'status' | 'date'>) => {
+        const { error } = await supabase.from('work_orders').insert({
+            title: newOrderData.title,
+            description: newOrderData.description,
+            category: newOrderData.category,
+            building: newOrderData.building,
+            department: newOrderData.department,
+            location: newOrderData.location,
+            reporter_name: newOrderData.reporterName,
+            contact_method: newOrderData.contactMethod,
+            contact_value: newOrderData.contactValue,
+            priority: newOrderData.priority,
+            images: newOrderData.images,
+            status: 'pending'
+        });
+
+        if (error) {
+            console.error('Error adding order:', error);
+            throw error;
+        }
+
         addNotification(
-            `Nueva orden ${newOrder.id}: "${newOrder.title}" en ${newOrder.building}`,
+            `Nueva orden: "${newOrderData.title}" en ${newOrderData.building}`,
             'new_order',
-            newOrder.id
+            'new'
         );
+        fetchOrders(); // Refresh after adding
     };
 
-    const updateOrderStatus = (id: string, status: OrderStatus) => {
-        setOrders(orders.map(order =>
-            order.id === id ? { ...order, status } : order
-        ));
+    const updateOrderStatus = async (id: string, status: OrderStatus) => {
+        const { error } = await supabase.from('work_orders').update({ status }).eq('id', id);
+        if (error) {
+            console.error('Error update order status:', error);
+            throw error;
+        }
+        fetchOrders();
     };
 
-    const assignWorker = (orderId: string, workerId: string) => {
-        setOrders(prev => prev.map(order =>
-            order.id === orderId ? { ...order, status: 'in_progress' as OrderStatus, assignedWorker: workerId } : order
-        ));
+    const assignWorker = async (orderId: string, workerId: string) => {
+        const { error } = await supabase.from('work_orders').update({
+            status: 'in_progress',
+            assigned_to: workerId
+        }).eq('id', orderId);
+
+        if (error) {
+            console.error('Error assign worker:', error);
+            throw error;
+        }
+
         addNotification(
-            `Orden ${orderId} asignada a ${workerId} — estado: En Progreso`,
+            `Orden asignada — estado: En Progreso`,
             'status_change',
             orderId
         );
+        fetchOrders();
     };
 
-    const closeOrder = (orderId: string, resolvedImages: string[], resolutionNotes: string) => {
-        setOrders(prev => prev.map(order =>
-            order.id === orderId
-                ? {
-                    ...order,
-                    status: 'resolved' as OrderStatus,
-                    resolvedImages,
-                    resolvedDate: new Date().toLocaleString(),
-                    resolutionNotes,
-                }
-                : order
-        ));
+    const closeOrder = async (orderId: string, resolvedImages: string[], resolutionNotes: string) => {
+        const { error } = await supabase.from('work_orders').update({
+            status: 'resolved',
+            resolution_images: resolvedImages,
+            resolution_notes: resolutionNotes,
+            resolved_at: new Date().toISOString()
+        }).eq('id', orderId);
+
+        if (error) {
+            console.error('Error close order:', error);
+            throw error;
+        }
+
         addNotification(
-            `Orden ${orderId} fue cerrada y marcada como resuelta`,
+            `Orden marcada como resuelta`,
             'status_change',
             orderId
         );
+        fetchOrders();
     };
 
     return (
-        <WorkOrderContext.Provider value={{ orders, addOrder, updateOrderStatus, assignWorker, closeOrder }}>
+        <WorkOrderContext.Provider value={{ orders, addOrder, updateOrderStatus, assignWorker, closeOrder, fetchOrders }}>
             {children}
         </WorkOrderContext.Provider>
     );

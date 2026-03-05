@@ -8,13 +8,14 @@ import { useWorkOrders } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
 import './PendingOrders.css';
 
-// Mock workers
-const workersList = [
-    { id: 'w1', name: 'Carlos Rodríguez', role: 'Plomero' },
-    { id: 'w2', name: 'Ana Martínez', role: 'Electricista' },
-    { id: 'w3', name: 'Roberto Sánchez', role: 'Mantenimiento General' },
-    { id: 'w4', name: 'Lucía Fernández', role: 'Supervisora de Limpieza' },
-];
+import { supabase } from '../lib/supabase';
+
+// We will fetch workers dynamically.
+interface WorkerProfile {
+    id: string;
+    name: string;
+    role: string;
+}
 
 const PendingOrders: React.FC = () => {
     const { orders, assignWorker } = useWorkOrders();
@@ -22,6 +23,21 @@ const PendingOrders: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedWorker, setSelectedWorker] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [workersList, setWorkersList] = useState<WorkerProfile[]>([]);
+
+    React.useEffect(() => {
+        const fetchWorkers = async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, full_name, role')
+                .eq('role', 'operario');
+
+            if (data) {
+                setWorkersList(data.map(p => ({ id: p.id, name: p.full_name || 'Operario', role: 'Mantenedor' })));
+            }
+        };
+        fetchWorkers();
+    }, []);
 
     const pendingOrders = orders.filter(o => o.status === 'pending');
 
@@ -31,10 +47,15 @@ const PendingOrders: React.FC = () => {
         setIsModalOpen(true);
     };
 
-    const handleAssign = () => {
+    const handleAssign = async () => {
         if (!selectedWorker || !selectedOrder) return;
-        assignWorker(selectedOrder.id, selectedWorker);
-        setIsModalOpen(false);
+        try {
+            await assignWorker(selectedOrder.id, selectedWorker);
+            setIsModalOpen(false);
+        } catch (error) {
+            console.error('Error al asignar operario:', error);
+            alert('Error al asignar la orden.');
+        }
     };
 
     const getCategoryIcon = (category: string) => {

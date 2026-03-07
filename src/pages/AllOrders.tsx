@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder, OrderStatus } from '../context/WorkOrderContext';
+import { uploadImage } from '../lib/storage';
 import './AllOrders.css';
 
 const PAGE_SIZE = 20;
@@ -21,8 +22,10 @@ const AllOrders: React.FC = () => {
     // Close order modal - separate state so modals don't conflict
     const [closeOrderTarget, setCloseOrderTarget] = useState<WorkOrder | null>(null);
     const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
-    const [closeImages, setCloseImages] = useState<string[]>([]);
+    const [closeImages, setCloseImages] = useState<string[]>([]);      // preview URLs
+    const [closeImageFiles, setCloseImageFiles] = useState<File[]>([]); // File objects
     const [closeNotes, setCloseNotes] = useState('');
+    const [isClosing, setIsClosing] = useState(false);
 
     // Filter & sort state
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -92,28 +95,41 @@ const AllOrders: React.FC = () => {
     const handleOpenCloseModal = (order: WorkOrder) => {
         setCloseOrderTarget(order);
         setCloseImages([]);
+        setCloseImageFiles([]);
         setCloseNotes('');
-        setIsDetailOpen(false); // close detail modal if open
+        setIsDetailOpen(false);
         setTimeout(() => setIsCloseModalOpen(true), 100);
     };
 
     const handleCloseImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                if (ev.target?.result && closeImages.length < 3) {
-                    setCloseImages([...closeImages, ev.target.result as string]);
-                }
-            };
-            reader.readAsDataURL(e.target.files[0]);
+        if (e.target.files && e.target.files[0] && closeImages.length < 3) {
+            const file = e.target.files[0];
+            const previewUrl = URL.createObjectURL(file);
+            setCloseImages(prev => [...prev, previewUrl]);
+            setCloseImageFiles(prev => [...prev, file]);
         }
     };
 
-    const handleConfirmClose = () => {
+    const handleConfirmClose = async () => {
         if (!closeOrderTarget) return;
-        closeOrder(closeOrderTarget.id, closeImages, closeNotes);
-        setIsCloseModalOpen(false);
-        setCloseOrderTarget(null);
+        if (closeImageFiles.length === 0) { alert('Adjuntá al menos una foto.'); return; }
+        if (!closeNotes.trim()) { alert('Completá las notas de resolución.'); return; }
+        setIsClosing(true);
+        try {
+            const uploadedUrls: string[] = [];
+            for (const file of closeImageFiles) {
+                const url = await uploadImage(file, 'resoluciones');
+                uploadedUrls.push(url);
+            }
+            await closeOrder(closeOrderTarget.id, uploadedUrls, closeNotes);
+            setIsCloseModalOpen(false);
+            setCloseOrderTarget(null);
+        } catch (err) {
+            console.error('Error closing order:', err);
+            alert('Hubo un error al cerrar la orden.');
+        } finally {
+            setIsClosing(false);
+        }
     };
 
     return (
@@ -392,7 +408,7 @@ const AllOrders: React.FC = () => {
                 footer={
                     <>
                         <Button variant="outline" onClick={() => setIsCloseModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleConfirmClose}>Confirmar Cierre</Button>
+                        <Button onClick={handleConfirmClose} isLoading={isClosing} disabled={isClosing}>Confirmar Cierre</Button>
                     </>
                 }
             >

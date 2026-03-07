@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
+import { uploadImage } from '../lib/storage';
 import { supabase } from '../lib/supabase';
 import './WorkerDashboard.css';
 
@@ -25,7 +26,8 @@ const WorkerDashboard: React.FC = () => {
     // Close Order State
     const [closeOrderTarget, setCloseOrderTarget] = useState<WorkOrder | null>(null);
     const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
-    const [closeImages, setCloseImages] = useState<string[]>([]);
+    const [closeImages, setCloseImages] = useState<string[]>([]);      // preview URLs
+    const [closeImageFiles, setCloseImageFiles] = useState<File[]>([]);
     const [closeNotes, setCloseNotes] = useState('');
 
     // Toast Notification State
@@ -95,27 +97,25 @@ const WorkerDashboard: React.FC = () => {
         e.stopPropagation();
         setCloseOrderTarget(order);
         setCloseImages([]);
+        setCloseImageFiles([]);
         setCloseNotes('');
         setIsDetailOpen(false);
         setTimeout(() => setIsCloseModalOpen(true), 100);
     };
 
     const handleCloseImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                if (ev.target?.result && closeImages.length < 3) {
-                    setCloseImages([...closeImages, ev.target.result as string]);
-                }
-            };
-            reader.readAsDataURL(e.target.files[0]);
+        if (e.target.files && e.target.files[0] && closeImages.length < 3) {
+            const file = e.target.files[0];
+            const previewUrl = URL.createObjectURL(file);
+            setCloseImages(prev => [...prev, previewUrl]);
+            setCloseImageFiles(prev => [...prev, file]);
         }
     };
 
     const handleConfirmClose = async () => {
         if (!closeOrderTarget) return;
-        if (closeImages.length === 0) {
-            showToast('Adjunta al menos una foto', 'error');
+        if (closeImageFiles.length === 0) {
+            showToast('Adjuntá al menos una foto del trabajo terminado', 'error');
             return;
         }
         if (!closeNotes.trim()) {
@@ -124,7 +124,12 @@ const WorkerDashboard: React.FC = () => {
         }
 
         try {
-            await closeOrder(closeOrderTarget.id, closeImages, closeNotes);
+            const uploadedUrls: string[] = [];
+            for (const file of closeImageFiles) {
+                const url = await uploadImage(file, 'resoluciones');
+                uploadedUrls.push(url);
+            }
+            await closeOrder(closeOrderTarget.id, uploadedUrls, closeNotes);
             setIsCloseModalOpen(false);
             setCloseOrderTarget(null);
             showToast('Tarea finalizada y enviada', 'success');

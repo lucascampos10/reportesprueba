@@ -6,6 +6,7 @@ import { Camera, X, CheckCircle2, MessageSquare, Mail, AlertTriangle } from 'luc
 import { useNavigate } from 'react-router-dom';
 import { useWorkOrders } from '../context/WorkOrderContext';
 import type { ContactMethod, Priority } from '../context/WorkOrderContext';
+import { uploadImage } from '../lib/storage';
 import './LandingPage.css';
 
 const LandingPage: React.FC = () => {
@@ -13,7 +14,8 @@ const LandingPage: React.FC = () => {
     const { addOrder } = useWorkOrders();
     const [step, setStep] = useState<1 | 2>(1);
     const [isLoading, setIsLoading] = useState(false);
-    const [images, setImages] = useState<string[]>([]);
+    const [images, setImages] = useState<string[]>([]);       // preview URLs
+    const [imageFiles, setImageFiles] = useState<File[]>([]);  // actual File objects for upload
 
     // Form fields
     const [reporterName, setReporterName] = useState('');
@@ -27,16 +29,17 @@ const LandingPage: React.FC = () => {
     const [description, setDescription] = useState('');
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const imgUrl = URL.createObjectURL(e.target.files[0]);
-            setImages([...images, imgUrl]);
+        if (e.target.files && e.target.files[0] && images.length < 3) {
+            const file = e.target.files[0];
+            const previewUrl = URL.createObjectURL(file);
+            setImages(prev => [...prev, previewUrl]);
+            setImageFiles(prev => [...prev, file]);
         }
     };
 
     const removeImage = (index: number) => {
-        const newImages = [...images];
-        newImages.splice(index, 1);
-        setImages(newImages);
+        setImages(prev => prev.filter((_, i) => i !== index));
+        setImageFiles(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -44,6 +47,13 @@ const LandingPage: React.FC = () => {
         setIsLoading(true);
 
         try {
+            // Upload all photos to Supabase Storage first, get public URLs
+            const uploadedUrls: string[] = [];
+            for (const file of imageFiles) {
+                const url = await uploadImage(file, 'reportes');
+                uploadedUrls.push(url);
+            }
+
             await addOrder({
                 title: `Reporte en ${location}`,
                 description,
@@ -55,7 +65,7 @@ const LandingPage: React.FC = () => {
                 contactMethod,
                 contactValue,
                 priority,
-                images,
+                images: uploadedUrls,
             });
             setStep(2); // Success step
         } catch (error) {
@@ -69,6 +79,7 @@ const LandingPage: React.FC = () => {
     const resetForm = () => {
         setStep(1);
         setImages([]);
+        setImageFiles([]);
         setReporterName('');
         setBuilding('');
         setDepartment('');

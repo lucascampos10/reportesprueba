@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../components/Card';
 import { Modal } from '../components/Modal';
+import { Button } from '../components/Button';
 import {
     Building2, MapPin, Clock, User, Camera, CheckCircle2,
-    AlertTriangle, Droplets, FileText, ChevronLeft, ChevronRight, Check
+    AlertTriangle, Droplets, FileText, ChevronLeft, ChevronRight, Play, Upload, X
 } from 'lucide-react';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
@@ -13,9 +14,16 @@ import './WorkerDashboard.css';
 const PAGE_SIZE = 20;
 
 const WorkerDashboard: React.FC = () => {
-    const { orders, updateOrderStatus } = useWorkOrders();
+    const { orders, updateOrderStatus, closeOrder } = useWorkOrders();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+    // Close Order State
+    const [closeOrderTarget, setCloseOrderTarget] = useState<WorkOrder | null>(null);
+    const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+    const [closeImages, setCloseImages] = useState<string[]>([]);
+    const [closeNotes, setCloseNotes] = useState('');
+
     const [currentWorkerId, setCurrentWorkerId] = useState<string>('');
     const [workerName, setWorkerName] = useState<string>('');
     const [page, setPage] = useState(1);
@@ -34,13 +42,13 @@ const WorkerDashboard: React.FC = () => {
         fetchUser();
     }, []);
 
-    // Show only active orders assigned to the current logged-in worker
+    // Show pending and in_progress orders assigned to this worker
     const myActiveOrders = orders.filter(
-        o => o.assignedToId === currentWorkerId && o.status === 'in_progress'
+        o => o.assignedToId === currentWorkerId && (o.status === 'in_progress' || o.status === 'pending')
     );
 
-    const pendingCount = orders.filter(o => o.status === 'pending').length;
-    const activeCount = myActiveOrders.length;
+    const pendingCount = myActiveOrders.filter(o => o.status === 'pending').length;
+    const activeCount = myActiveOrders.filter(o => o.status === 'in_progress').length;
     const resolvedCount = orders.filter(o => o.assignedToId === currentWorkerId && o.status === 'resolved').length;
 
     const totalPages = Math.max(1, Math.ceil(myActiveOrders.length / PAGE_SIZE));
@@ -51,18 +59,58 @@ const WorkerDashboard: React.FC = () => {
         setIsDetailOpen(true);
     };
 
-    const handleMarkResolved = async (e: React.MouseEvent, orderId: string) => {
-        e.stopPropagation(); // prevent modal opening
-        if (window.confirm('¿Confirmas que terminaste este trabajo? El administrador deberá aprobar el cierre con fotos.')) {
+    const handleStartTask = async (e: React.MouseEvent, orderId: string) => {
+        e.stopPropagation();
+        if (window.confirm('¿Confirmas que vas a comenzar a trabajar en esta tarea ahora?')) {
             try {
-                // Change status to resolved. Note: The complete flow requires photos, 
-                // but this allows the worker to unblock their queue.
-                await updateOrderStatus(orderId, 'resolved');
+                await updateOrderStatus(orderId, 'in_progress');
                 setIsDetailOpen(false);
             } catch (error) {
-                console.error("Error updating status:", error);
-                alert("Hubo un error al actualizar el estado de la orden.");
+                console.error("Error starting task:", error);
+                alert("Hubo un error al iniciar la tarea.");
             }
+        }
+    };
+
+    const handleOpenCloseModal = (e: React.MouseEvent, order: WorkOrder) => {
+        e.stopPropagation();
+        setCloseOrderTarget(order);
+        setCloseImages([]);
+        setCloseNotes('');
+        setIsDetailOpen(false);
+        setTimeout(() => setIsCloseModalOpen(true), 100);
+    };
+
+    const handleCloseImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                if (ev.target?.result && closeImages.length < 3) {
+                    setCloseImages([...closeImages, ev.target.result as string]);
+                }
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    };
+
+    const handleConfirmClose = async () => {
+        if (!closeOrderTarget) return;
+        if (closeImages.length === 0) {
+            alert('Por favor adjunta al menos una foto del trabajo terminado.');
+            return;
+        }
+        if (!closeNotes.trim()) {
+            alert('Por favor agrega una breve descripción de lo que hiciste.');
+            return;
+        }
+
+        try {
+            await closeOrder(closeOrderTarget.id, closeImages, closeNotes);
+            setIsCloseModalOpen(false);
+            setCloseOrderTarget(null);
+        } catch (error) {
+            console.error('Error closing order from worker:', error);
+            alert('Hubo un error al cerrar la orden.');
         }
     };
 
@@ -86,6 +134,15 @@ const WorkerDashboard: React.FC = () => {
             {/* Quick Stats */}
             <div className="worker-stats-row">
                 <div className="worker-stat-card">
+                    <div className="worker-stat-icon pending">
+                        <AlertTriangle size={24} />
+                    </div>
+                    <div className="worker-stat-info">
+                        <div className="stat-number">{pendingCount}</div>
+                        <div className="stat-desc">Tareas Asignadas</div>
+                    </div>
+                </div>
+                <div className="worker-stat-card">
                     <div className="worker-stat-icon progress">
                         <Clock size={24} />
                     </div>
@@ -103,20 +160,11 @@ const WorkerDashboard: React.FC = () => {
                         <div className="stat-desc">Completadas</div>
                     </div>
                 </div>
-                <div className="worker-stat-card" style={{ opacity: 0.7 }}>
-                    <div className="worker-stat-icon pending">
-                        <AlertTriangle size={24} />
-                    </div>
-                    <div className="worker-stat-info">
-                        <div className="stat-number">{pendingCount}</div>
-                        <div className="stat-desc">En espera gral.</div>
-                    </div>
-                </div>
             </div>
 
             {/* Orders List */}
             <div className="worker-orders-section">
-                <h2>Tus Órdenes Activas</h2>
+                <h2>Tus Tareas</h2>
 
                 {myActiveOrders.length > 0 ? (
                     <>
@@ -127,7 +175,7 @@ const WorkerDashboard: React.FC = () => {
                         <div className="worker-order-list">
                             {pagedOrders.map(order => (
                                 <div key={order.id} className="worker-order-card" onClick={() => handleViewDetail(order)}>
-                                    <div className="worker-order-stripe stripe-in_progress" />
+                                    <div className={`worker-order-stripe stripe-${order.status}`} />
                                     <div className="worker-order-body">
                                         <div className="worker-order-top" style={{ alignItems: 'flex-start' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -137,8 +185,8 @@ const WorkerDashboard: React.FC = () => {
                                                 <h4 className="worker-order-title">{order.title}</h4>
                                             </div>
                                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                <span className={`worker-order-priority p-${order.priority}`}>
-                                                    {order.priority.toUpperCase()}
+                                                <span className={`status-badge badge-${order.status === 'pending' ? 'warning' : 'info'}`}>
+                                                    {order.status === 'pending' ? 'Pendiente' : 'En Progreso'}
                                                 </span>
                                             </div>
                                         </div>
@@ -151,13 +199,23 @@ const WorkerDashboard: React.FC = () => {
                                                 <span className="meta-inline"><MapPin size={14} /> {order.location}</span>
                                                 <span className="meta-inline"><Clock size={14} /> {order.date}</span>
                                             </div>
-                                            <button
-                                                className="btn btn-sm btn-primary"
-                                                style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.3rem 0.6rem' }}
-                                                onClick={(e) => handleMarkResolved(e, order.id)}
-                                            >
-                                                <Check size={14} /> Listo
-                                            </button>
+                                            <div>
+                                                {order.status === 'pending' ? (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={(e) => handleStartTask(e, order.id)}
+                                                    >
+                                                        <Play size={14} style={{ marginRight: '0.3rem' }} /> Comenzar Tarea
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={(e) => handleOpenCloseModal(e, order)}
+                                                    >
+                                                        <CheckCircle2 size={14} style={{ marginRight: '0.3rem' }} /> Finalizar Tarea
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -185,19 +243,35 @@ const WorkerDashboard: React.FC = () => {
                     <Card>
                         <CardContent>
                             <div className="worker-empty">
-                                No tenés ninguna orden en progreso en este momento.
+                                No tenés ninguna tarea asignada en este momento.
                             </div>
                         </CardContent>
                     </Card>
                 )}
             </div>
 
-            {/* Detail modal */}
+            {/* Detail modal for info only */}
             <Modal
                 isOpen={isDetailOpen}
                 onClose={() => setIsDetailOpen(false)}
                 title={`Orden: ${selectedOrder ? formatOrderId(selectedOrder.orderNumber) : ''}`}
                 maxWidth="700px"
+                footer={
+                    selectedOrder && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', gap: '1rem' }}>
+                            <Button variant="outline" onClick={() => setIsDetailOpen(false)}>Cerrar</Button>
+                            {selectedOrder.status === 'pending' ? (
+                                <Button onClick={(e) => handleStartTask(e, selectedOrder.id)}>
+                                    <Play size={16} style={{ marginRight: '0.5rem' }} /> Comenzar Tarea
+                                </Button>
+                            ) : (
+                                <Button onClick={(e) => handleOpenCloseModal(e, selectedOrder)}>
+                                    <CheckCircle2 size={16} style={{ marginRight: '0.5rem' }} /> Finalizar Tarea
+                                </Button>
+                            )}
+                        </div>
+                    )
+                }
             >
                 {selectedOrder && (
                     <div className="worker-detail">
@@ -254,6 +328,76 @@ const WorkerDashboard: React.FC = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Close order modal (For the worker) */}
+            <Modal
+                isOpen={isCloseModalOpen}
+                onClose={() => setIsCloseModalOpen(false)}
+                title={`Finalizar Tarea: ${closeOrderTarget ? formatOrderId(closeOrderTarget.orderNumber) : ''}`}
+                maxWidth="500px"
+                footer={
+                    <>
+                        <Button variant="outline" onClick={() => setIsCloseModalOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleConfirmClose}>Confirmar Cierre</Button>
+                    </>
+                }
+            >
+                <div className="close-order-form">
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+                        Para finalizar esta tarea, adjuntá fotos del resultado y detallá lo que hiciste. Esta información llegará a administración.
+                    </p>
+
+                    <div>
+                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <Camera size={16} /> Fotos del trabajo terminado (Obligatorio)
+                        </label>
+                        <label className="close-upload-zone">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                style={{ display: 'none' }}
+                                onChange={handleCloseImageUpload}
+                            />
+                            <Upload size={24} style={{ color: 'var(--color-text-muted)', marginBottom: '0.5rem' }} />
+                            <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
+                                Haz clic para subir fotos (máx. 3)
+                            </p>
+                        </label>
+                        {closeImages.length > 0 && (
+                            <div className="close-preview-grid">
+                                {closeImages.map((img, i) => (
+                                    <div key={i} style={{ position: 'relative' }}>
+                                        <img src={img} alt={`Preview ${i}`} className="close-preview-thumb" />
+                                        <button
+                                            onClick={() => setCloseImages(closeImages.filter((_, idx) => idx !== i))}
+                                            style={{
+                                                position: 'absolute', top: '-6px', right: '-6px',
+                                                width: '20px', height: '20px', borderRadius: '50%',
+                                                background: 'var(--color-danger)', border: 'none',
+                                                color: 'white', cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Detalles de la resolución (Obligatorio)</label>
+                        <textarea
+                            className="form-textarea minimal-textarea"
+                            placeholder="Ej: Se cambió la lamparita por una de 10W..."
+                            rows={4}
+                            value={closeNotes}
+                            onChange={(e) => setCloseNotes(e.target.value)}
+                        ></textarea>
+                    </div>
+                </div>
             </Modal>
         </div>
     );

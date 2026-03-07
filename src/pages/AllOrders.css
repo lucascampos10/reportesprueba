@@ -27,18 +27,36 @@
 }
 
 .filter-chip:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary-dark);
+    border-color: var(--color-text);
+    color: var(--color-text);
 }
 
 .filter-chip.active {
-    background-color: var(--color-primary);
-    color: #000;
-    border-color: var(--color-primary);
+    background-color: var(--color-text);
+    color: var(--color-bg);
+    border-color: var(--color-text);
+}
+
+.filter-chip.status-pending.active {
+    background: rgba(234, 179, 8, 0.15);
+    color: var(--color-warning);
+    border-color: var(--color-warning);
+}
+
+.filter-chip.status-in_progress.active {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3B82F6;
+    border-color: #3B82F6;
+}
+
+.filter-chip.status-resolved.active {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--color-success);
+    border-color: var(--color-success);
 }
 
 .filter-chip .chip-count {
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.08);
     padding: 0.125rem 0.5rem;
     border-radius: var(--radius-full);
     font-size: 0.75rem;

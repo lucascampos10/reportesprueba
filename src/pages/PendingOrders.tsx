@@ -27,13 +27,18 @@ const PendingOrders: React.FC = () => {
 
     React.useEffect(() => {
         const fetchWorkers = async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('profiles')
                 .select('id, full_name, role')
                 .eq('role', 'operario');
 
-            if (data) {
-                setWorkersList(data.map(p => ({ id: p.id, name: p.full_name || 'Operario', role: 'Mantenedor' })));
+            if (error) {
+                console.error('Error fetching workers (RLS may be blocking):', error);
+            }
+            if (data && data.length > 0) {
+                setWorkersList(data.map(p => ({ id: p.id, name: p.full_name || 'Operario sin nombre', role: 'Mantenedor' })));
+            } else {
+                console.warn('No se encontraron operarios. Verifica las políticas RLS en Supabase.');
             }
         };
         fetchWorkers();

@@ -126,7 +126,8 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
         addNotification(
             `Nueva orden: "${newOrderData.title}" en ${newOrderData.building}`,
             'new_order',
-            'new'
+            'new',
+            'admin'  // Only admins see new order notifications
         );
         fetchOrders(); // Refresh after adding
     };
@@ -152,9 +153,10 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
 
         addNotification(
-            `Orden asignada — estado: En Progreso`,
+            `Orden asignada — se le asignó un nuevo trabajo`,
             'status_change',
-            orderId
+            orderId,
+            'operario'  // Only the worker sees assignment notifications
         );
         fetchOrders();
     };

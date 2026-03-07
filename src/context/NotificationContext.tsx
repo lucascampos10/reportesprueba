@@ -8,12 +8,13 @@ export interface Notification {
     timestamp: string;
     read: boolean;
     orderId?: string;
+    audience: 'admin' | 'operario' | 'all'; // NEW: who should see this notification
 }
 
 interface NotificationContextType {
     notifications: Notification[];
     unreadCount: number;
-    addNotification: (message: string, type: Notification['type'], orderId?: string) => void;
+    addNotification: (message: string, type: Notification['type'], orderId?: string, audience?: Notification['audience']) => void;
     markAsRead: (id: string) => void;
     markAllAsRead: () => void;
     clearAll: () => void;
@@ -26,7 +27,12 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     const unreadCount = notifications.filter(n => !n.read).length;
 
-    const addNotification = useCallback((message: string, type: Notification['type'], orderId?: string) => {
+    const addNotification = useCallback((
+        message: string,
+        type: Notification['type'],
+        orderId?: string,
+        audience: Notification['audience'] = 'all'
+    ) => {
         const newNotification: Notification = {
             id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
             message,
@@ -34,6 +40,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             timestamp: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
             read: false,
             orderId,
+            audience,
         };
         setNotifications(prev => [newNotification, ...prev]);
     }, []);

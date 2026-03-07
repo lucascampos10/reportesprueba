@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../components/Card';
 import { Modal } from '../components/Modal';
 import {
@@ -7,17 +7,28 @@ import {
 } from 'lucide-react';
 import { useWorkOrders } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
+import { supabase } from '../lib/supabase';
 import './WorkerDashboard.css';
-
-const CURRENT_WORKER = 'Carlos Rodríguez';
 
 const WorkerHistory: React.FC = () => {
     const { orders } = useWorkOrders();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [currentWorkerId, setCurrentWorkerId] = useState<string>('');
 
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setCurrentWorkerId(user.id);
+            }
+        };
+        fetchUser();
+    }, []);
+
+    // Show only resolved orders assigned to the current logged-in worker
     const myResolvedOrders = orders.filter(
-        o => (o.assignedWorker === CURRENT_WORKER || o.assignedWorker === 'w1') && o.status === 'resolved'
+        o => o.assignedToId === currentWorkerId && o.status === 'resolved'
     );
 
     const getCategoryIcon = (category: string) => {

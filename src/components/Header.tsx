@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import './Header.css';
 
 const Header: React.FC = () => {
-    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+    const { notifications, markAsRead, markAllAsRead } = useNotifications();
     const navigate = useNavigate();
     const location = useLocation();
     const isWorker = location.pathname.startsWith('/operario');
@@ -19,13 +19,13 @@ const Header: React.FC = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
 
-    // Filter notifications for workers: only show assignment and status changes for their orders
+    // Filter notifications based on the current user's role
+    // Workers (operario) only see notifications targeted at them or 'all'
+    // Admins see notifications targeted at 'admin' or 'all'
     const visibleNotifications = isWorker
-        ? notifications.filter(n => n.type === 'status_change' || n.message.includes('asignada'))
-        : notifications;
-    const visibleUnreadCount = isWorker
-        ? visibleNotifications.filter(n => !n.read).length
-        : unreadCount;
+        ? notifications.filter(n => n.audience === 'operario' || n.audience === 'all')
+        : notifications.filter(n => n.audience === 'admin' || n.audience === 'all');
+    const visibleUnreadCount = visibleNotifications.filter(n => !n.read).length;
 
     // Close dropdown on outside click
     useEffect(() => {

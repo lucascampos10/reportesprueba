@@ -106,6 +106,26 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     useEffect(() => {
         fetchOrders();
+
+        // ─── Supabase Realtime ─────────────────────────────────────────────
+        // Subscribe to any INSERT, UPDATE, or DELETE on work_orders.
+        // This means the admin sees new forms in real time and workers
+        // see assignments the moment they're made — without refreshing.
+        const channel = supabase
+            .channel('work_orders_realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'work_orders' },
+                (_payload) => {
+                    // A change happened anywhere on the table — re-fetch
+                    fetchOrders();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const addOrder = async (newOrderData: Omit<WorkOrder, 'id' | 'status' | 'date' | 'orderNumber'>) => {

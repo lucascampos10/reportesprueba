@@ -9,6 +9,7 @@ export type OrderStatus = 'pending' | 'in_progress' | 'resolved';
 
 export interface WorkOrder {
     id: string;
+    orderNumber: number;   // display number: e.g. 100, 101...
     title: string;
     description: string;
     category: string;
@@ -29,9 +30,12 @@ export interface WorkOrder {
     resolutionNotes?: string;
 }
 
+// Helper: show human-friendly order ID like ORD-100
+export const formatOrderId = (orderNumber: number) => `ORD-${orderNumber}`;
+
 interface WorkOrderContextType {
     orders: WorkOrder[];
-    addOrder: (order: Omit<WorkOrder, 'id' | 'status' | 'date'>) => Promise<void>;
+    addOrder: (order: Omit<WorkOrder, 'id' | 'status' | 'date' | 'orderNumber'>) => Promise<void>;
     updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
     assignWorker: (orderId: string, workerId: string) => Promise<void>;
     closeOrder: (orderId: string, resolvedImages: string[], resolutionNotes: string) => Promise<void>;
@@ -74,8 +78,10 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
 
     const processOrders = (data: any[]) => {
-        const mappedOrders: WorkOrder[] = data.map((o: any) => ({
+        // Assign sequential order numbers starting from 100, oldest first
+        const mappedOrders: WorkOrder[] = data.map((o: any, index: number) => ({
             id: o.id,
+            orderNumber: 100 + (data.length - 1 - index), // oldest = 100, newest = 100 + n-1
             title: o.title,
             description: o.description,
             category: o.category || '',
@@ -102,7 +108,7 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
         fetchOrders();
     }, []);
 
-    const addOrder = async (newOrderData: Omit<WorkOrder, 'id' | 'status' | 'date'>) => {
+    const addOrder = async (newOrderData: Omit<WorkOrder, 'id' | 'status' | 'date' | 'orderNumber'>) => {
         const { error } = await supabase.from('work_orders').insert({
             title: newOrderData.title,
             description: newOrderData.description,

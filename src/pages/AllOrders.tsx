@@ -6,7 +6,7 @@ import {
     Building2, MapPin, Clock, User, Camera, CheckCircle2,
     AlertTriangle, Droplets, FileText, Upload, X
 } from 'lucide-react';
-import { useWorkOrders } from '../context/WorkOrderContext';
+import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder, OrderStatus } from '../context/WorkOrderContext';
 import './AllOrders.css';
 
@@ -153,7 +153,7 @@ const AllOrders: React.FC = () => {
                                     <span className="meta-inline"><MapPin size={14} /> {order.location}</span>
                                     <span className="meta-inline"><User size={14} /> {order.reporterName}</span>
                                     <span className="meta-inline"><Clock size={14} /> {order.date}</span>
-                                    <span className="order-list-id">{order.id}</span>
+                                    <span className="order-list-id">{formatOrderId(order.orderNumber)}</span>
                                 </div>
                             </div>
                         </div>

@@ -40,8 +40,9 @@ const Login: React.FC = () => {
 
                 if (profileError || !profile) {
                     console.error("Error fetching profile:", profileError);
-                    // Default fallback if no profile found
-                    navigate('/admin');
+                    // If no profile exists, show error — don't auto-grant admin access
+                    setError('Tu usuario no tiene un perfil configurado. Contactá al administrador.');
+                    await supabase.auth.signOut(); // Sign them out so they can't access protected routes
                 } else {
                     if (profile.role === 'operario') {
                         navigate('/operario');

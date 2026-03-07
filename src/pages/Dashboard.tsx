@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { formatOrderId, useWorkOrders } from '../context/WorkOrderContext';
 import {
     Building2,
     MapPin,
@@ -12,7 +13,6 @@ import {
     Plus,
     Filter
 } from 'lucide-react';
-import { useWorkOrders } from '../context/WorkOrderContext';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
@@ -116,7 +116,7 @@ const Dashboard: React.FC = () => {
                                             {getCategoryIcon(order.category)}
                                         </div>
                                         <div className="order-id-status">
-                                            <span className="order-id">{order.id}</span>
+                                            <span className="order-id">{formatOrderId(order.orderNumber)}</span>
                                             {getStatusBadge(order.status)}
                                         </div>
                                     </div>

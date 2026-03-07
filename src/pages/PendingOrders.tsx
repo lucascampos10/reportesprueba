@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { Input } from '../components/Input';
 import { Building2, MapPin, Clock, AlertTriangle, Droplets, User, Camera, CheckCircle2 } from 'lucide-react';
-import { useWorkOrders } from '../context/WorkOrderContext';
+import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
 import './PendingOrders.css';
 
@@ -113,7 +113,7 @@ const PendingOrders: React.FC = () => {
                             <tbody>
                                 {filteredPendingOrders.map(order => (
                                     <tr key={order.id} className="table-row-hover">
-                                        <td className="font-medium text-muted">{order.id}</td>
+                                        <td className="font-medium text-muted">{formatOrderId(order.orderNumber)}</td>
                                         <td>
                                             <div className="flex items-center gap-3">
                                                 <div className="icon-bg-small">{getCategoryIcon(order.category)}</div>

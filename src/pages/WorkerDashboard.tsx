@@ -18,11 +18,18 @@ const WorkerDashboard: React.FC = () => {
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+    // Start Task Confirmation State
+    const [startOrderTarget, setStartOrderTarget] = useState<WorkOrder | null>(null);
+    const [isStartModalOpen, setIsStartModalOpen] = useState(false);
+
     // Close Order State
     const [closeOrderTarget, setCloseOrderTarget] = useState<WorkOrder | null>(null);
     const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
     const [closeImages, setCloseImages] = useState<string[]>([]);
     const [closeNotes, setCloseNotes] = useState('');
+
+    // Toast Notification State
+    const [toastMessage, setToastMessage] = useState<{ title: string, type: 'success' | 'error' } | null>(null);
 
     const [currentWorkerId, setCurrentWorkerId] = useState<string>('');
     const [workerName, setWorkerName] = useState<string>('');
@@ -42,6 +49,11 @@ const WorkerDashboard: React.FC = () => {
         fetchUser();
     }, []);
 
+    const showToast = (title: string, type: 'success' | 'error' = 'success') => {
+        setToastMessage({ title, type });
+        setTimeout(() => setToastMessage(null), 3000);
+    };
+
     // Show pending and in_progress orders assigned to this worker
     const myActiveOrders = orders.filter(
         o => o.assignedToId === currentWorkerId && (o.status === 'in_progress' || o.status === 'pending')
@@ -59,16 +71,23 @@ const WorkerDashboard: React.FC = () => {
         setIsDetailOpen(true);
     };
 
-    const handleStartTask = async (e: React.MouseEvent, orderId: string) => {
+    const handleOpenStartModal = (e: React.MouseEvent, order: WorkOrder) => {
         e.stopPropagation();
-        if (window.confirm('¿Confirmas que vas a comenzar a trabajar en esta tarea ahora?')) {
-            try {
-                await updateOrderStatus(orderId, 'in_progress');
-                setIsDetailOpen(false);
-            } catch (error) {
-                console.error("Error starting task:", error);
-                alert("Hubo un error al iniciar la tarea.");
-            }
+        setStartOrderTarget(order);
+        setIsDetailOpen(false);
+        setTimeout(() => setIsStartModalOpen(true), 100);
+    };
+
+    const handleConfirmStartTask = async () => {
+        if (!startOrderTarget) return;
+        try {
+            await updateOrderStatus(startOrderTarget.id, 'in_progress');
+            setIsStartModalOpen(false);
+            setStartOrderTarget(null);
+            showToast('Tarea iniciada exitosamente', 'success');
+        } catch (error) {
+            console.error("Error starting task:", error);
+            showToast('Hubo un error al iniciar la tarea', 'error');
         }
     };
 
@@ -96,11 +115,11 @@ const WorkerDashboard: React.FC = () => {
     const handleConfirmClose = async () => {
         if (!closeOrderTarget) return;
         if (closeImages.length === 0) {
-            alert('Por favor adjunta al menos una foto del trabajo terminado.');
+            showToast('Adjunta al menos una foto', 'error');
             return;
         }
         if (!closeNotes.trim()) {
-            alert('Por favor agrega una breve descripción de lo que hiciste.');
+            showToast('Agrega una breve descripción', 'error');
             return;
         }
 
@@ -108,9 +127,10 @@ const WorkerDashboard: React.FC = () => {
             await closeOrder(closeOrderTarget.id, closeImages, closeNotes);
             setIsCloseModalOpen(false);
             setCloseOrderTarget(null);
+            showToast('Tarea finalizada y enviada', 'success');
         } catch (error) {
             console.error('Error closing order from worker:', error);
-            alert('Hubo un error al cerrar la orden.');
+            showToast('Hubo un error al cerrar la orden', 'error');
         }
     };
 
@@ -124,7 +144,30 @@ const WorkerDashboard: React.FC = () => {
     };
 
     return (
-        <div className="worker-dashboard animate-fade-in">
+        <div className="worker-dashboard animate-fade-in" style={{ position: 'relative' }}>
+
+            {/* Custom Toast Notification */}
+            {toastMessage && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '2rem',
+                    right: '2rem',
+                    background: toastMessage.type === 'success' ? '#10B981' : '#EF4444',
+                    color: 'white',
+                    padding: '1rem 1.5rem',
+                    borderRadius: 'var(--radius-md)',
+                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    zIndex: 9999,
+                    animation: 'slideInRight 0.3s ease-out forwards'
+                }}>
+                    {toastMessage.type === 'success' ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{toastMessage.title}</span>
+                </div>
+            )}
+
             {/* Welcome Banner */}
             <div className="worker-welcome">
                 <h1>Hola, {workerName || 'Operario'}</h1>
@@ -203,7 +246,7 @@ const WorkerDashboard: React.FC = () => {
                                                 {order.status === 'pending' ? (
                                                     <Button
                                                         size="sm"
-                                                        onClick={(e) => handleStartTask(e, order.id)}
+                                                        onClick={(e) => handleOpenStartModal(e, order)}
                                                     >
                                                         <Play size={14} style={{ marginRight: '0.3rem' }} /> Comenzar Tarea
                                                     </Button>
@@ -261,7 +304,7 @@ const WorkerDashboard: React.FC = () => {
                         <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', gap: '1rem' }}>
                             <Button variant="outline" onClick={() => setIsDetailOpen(false)}>Cerrar</Button>
                             {selectedOrder.status === 'pending' ? (
-                                <Button onClick={(e) => handleStartTask(e, selectedOrder.id)}>
+                                <Button onClick={(e) => handleOpenStartModal(e, selectedOrder)}>
                                     <Play size={16} style={{ marginRight: '0.5rem' }} /> Comenzar Tarea
                                 </Button>
                             ) : (
@@ -328,6 +371,32 @@ const WorkerDashboard: React.FC = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Start Task Confirmation Modal */}
+            <Modal
+                isOpen={isStartModalOpen}
+                onClose={() => setIsStartModalOpen(false)}
+                title="Comenzar Tarea"
+                maxWidth="400px"
+                footer={
+                    <>
+                        <Button variant="outline" onClick={() => setIsStartModalOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleConfirmStartTask}>
+                            <Play size={16} style={{ marginRight: '0.5rem' }} /> Confirmar e Iniciar
+                        </Button>
+                    </>
+                }
+            >
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                    <div style={{ display: 'inline-flex', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', padding: '1rem', borderRadius: '50%', marginBottom: '1rem' }}>
+                        <Play size={32} />
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>¿Comenzar esta tarea?</h3>
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
+                        Al confirmar, esta orden ({startOrderTarget ? formatOrderId(startOrderTarget.orderNumber) : ''}) pasará a estado "En Progreso" y se notificará a administración.
+                    </p>
+                </div>
             </Modal>
 
             {/* Close order modal (For the worker) */}

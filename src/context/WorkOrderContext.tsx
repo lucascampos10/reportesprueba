@@ -158,8 +158,11 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
             throw error;
         }
 
+        const order = orders.find(o => o.id === orderId);
+        const displayId = order ? formatOrderId(order.orderNumber) : orderId;
+
         addNotification(
-            `Orden asignada — se le asignó un nuevo trabajo`,
+            `Orden asignada (${displayId}) — se le asignó un nuevo trabajo`,
             'status_change',
             orderId,
             'operario'  // Only the worker sees assignment notifications

@@ -4,15 +4,17 @@ import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import {
     Building2, MapPin, Clock, User, Camera, CheckCircle2,
-    AlertTriangle, Droplets, FileText, Upload, X
+    AlertTriangle, Droplets, FileText, Upload, X, SlidersHorizontal, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder, OrderStatus } from '../context/WorkOrderContext';
 import './AllOrders.css';
 
+const PAGE_SIZE = 20;
+type SortKey = 'date_desc' | 'date_asc' | 'priority_high' | 'priority_low';
+
 const AllOrders: React.FC = () => {
     const { orders, closeOrder } = useWorkOrders();
-    const [filter, setFilter] = useState<'all' | OrderStatus>('all');
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -22,11 +24,48 @@ const AllOrders: React.FC = () => {
     const [closeImages, setCloseImages] = useState<string[]>([]);
     const [closeNotes, setCloseNotes] = useState('');
 
-    const filteredOrders = filter === 'all'
-        ? orders
-        : orders.filter(o => o.status === filter);
+    // Filter & sort state
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [filterStatus, setFilterStatus] = useState<'all' | OrderStatus>('all');
+    const [filterBuilding, setFilterBuilding] = useState('');
+    const [filterPriority, setFilterPriority] = useState('');
+    const [filterReporter, setFilterReporter] = useState('');
+    const [sortKey, setSortKey] = useState<SortKey>('date_desc');
+    const [page, setPage] = useState(1);
 
     const countByStatus = (status: OrderStatus) => orders.filter(o => o.status === status).length;
+    const uniqueBuildings = [...new Set(orders.map(o => o.building).filter(Boolean))];
+    const hasActiveFilters = filterBuilding || filterPriority || filterReporter || filterStatus !== 'all';
+
+    // Apply filters
+    let processedOrders = orders
+        .filter(o => filterStatus === 'all' || o.status === filterStatus)
+        .filter(o => !filterBuilding || o.building === filterBuilding)
+        .filter(o => !filterPriority || o.priority === filterPriority)
+        .filter(o => !filterReporter || o.reporterName.toLowerCase().includes(filterReporter.toLowerCase()));
+
+    // Apply sort
+    processedOrders = [...processedOrders].sort((a, b) => {
+        if (sortKey === 'date_asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (sortKey === 'date_desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
+        const priorityOrder = { alta: 3, media: 2, baja: 1 };
+        if (sortKey === 'priority_high') return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+        if (sortKey === 'priority_low') return (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0);
+        return 0;
+    });
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(processedOrders.length / PAGE_SIZE));
+    const pagedOrders = processedOrders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+    const handleClearFilters = () => {
+        setFilterStatus('all');
+        setFilterBuilding('');
+        setFilterPriority('');
+        setFilterReporter('');
+        setSortKey('date_desc');
+        setPage(1);
+    };
 
     const getCategoryIcon = (category: string) => {
         switch (category.toLowerCase()) {
@@ -86,38 +125,95 @@ const AllOrders: React.FC = () => {
                 </div>
             </div>
 
-            {/* Filter chips */}
-            <div className="orders-filter-bar">
-                <button
-                    className={`filter-chip ${filter === 'all' ? 'active' : ''}`}
-                    onClick={() => setFilter('all')}
-                >
-                    Todas <span className="chip-count">{orders.length}</span>
-                </button>
-                <button
-                    className={`filter-chip ${filter === 'pending' ? 'active' : ''}`}
-                    onClick={() => setFilter('pending')}
-                >
-                    Pendientes <span className="chip-count">{countByStatus('pending')}</span>
-                </button>
-                <button
-                    className={`filter-chip ${filter === 'in_progress' ? 'active' : ''}`}
-                    onClick={() => setFilter('in_progress')}
-                >
-                    En Progreso <span className="chip-count">{countByStatus('in_progress')}</span>
-                </button>
-                <button
-                    className={`filter-chip ${filter === 'resolved' ? 'active' : ''}`}
-                    onClick={() => setFilter('resolved')}
-                >
-                    Resueltas <span className="chip-count">{countByStatus('resolved')}</span>
-                </button>
+            {/* Filter controls */}
+            <div style={{ marginBottom: '1.5rem' }}>
+                <Card className="filter-card mix-glass">
+                    <CardContent className="p-4">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: isFilterOpen ? '1rem' : '0' }}>
+                            <Button
+                                variant={isFilterOpen ? 'primary' : 'outline'}
+                                size="sm"
+                                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            >
+                                <SlidersHorizontal size={15} style={{ marginRight: '0.375rem' }} />
+                                Filtrar y Ordenar
+                                {hasActiveFilters && <span style={{ marginLeft: '0.375rem', background: 'var(--color-primary-dark)', color: '#fff', borderRadius: '9999px', padding: '0 0.4rem', fontSize: '0.7rem', fontWeight: 700 }}>!</span>}
+                            </Button>
+
+                            {/* Quick Status Chips */}
+                            <div className="quick-filter-chips" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginLeft: '0.5rem' }}>
+                                <button className={`chip-btn ${filterStatus === 'all' ? 'active' : ''}`} onClick={() => { setFilterStatus('all'); setPage(1); }}>
+                                    Todas <span className="chip-count">{orders.length}</span>
+                                </button>
+                                <button className={`chip-btn ${filterStatus === 'pending' ? 'active' : ''}`} onClick={() => { setFilterStatus('pending'); setPage(1); }}>
+                                    Pendientes <span className="chip-count">{countByStatus('pending')}</span>
+                                </button>
+                                <button className={`chip-btn ${filterStatus === 'in_progress' ? 'active' : ''}`} onClick={() => { setFilterStatus('in_progress'); setPage(1); }}>
+                                    En Progreso <span className="chip-count">{countByStatus('in_progress')}</span>
+                                </button>
+                                <button className={`chip-btn ${filterStatus === 'resolved' ? 'active' : ''}`} onClick={() => { setFilterStatus('resolved'); setPage(1); }}>
+                                    Resueltas <span className="chip-count">{countByStatus('resolved')}</span>
+                                </button>
+                            </div>
+
+                            {hasActiveFilters && (
+                                <button onClick={handleClearFilters} style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', background: 'none', border: 'none' }}>
+                                    <X size={13} /> Limpiar filtros
+                                </button>
+                            )}
+                        </div>
+
+                        {isFilterOpen && (
+                            <div className="filter-panel-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
+                                <div className="filter-group">
+                                    <label className="filter-label" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Ordenar por</label>
+                                    <select className="form-select" value={sortKey} onChange={e => { setSortKey(e.target.value as SortKey); setPage(1); }}>
+                                        <option value="date_desc">Fecha (más nueva primero)</option>
+                                        <option value="date_asc">Fecha (más antigua primero)</option>
+                                        <option value="priority_high">Prioridad (alta primero)</option>
+                                        <option value="priority_low">Prioridad (baja primero)</option>
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label className="filter-label" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Edificio</label>
+                                    <select className="form-select" value={filterBuilding} onChange={e => { setFilterBuilding(e.target.value); setPage(1); }}>
+                                        <option value="">Todos</option>
+                                        {uniqueBuildings.map(b => <option key={b} value={b}>{b}</option>)}
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label className="filter-label" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Prioridad</label>
+                                    <select className="form-select" value={filterPriority} onChange={e => { setFilterPriority(e.target.value); setPage(1); }}>
+                                        <option value="">Todas</option>
+                                        <option value="alta">Alta</option>
+                                        <option value="media">Media</option>
+                                        <option value="baja">Baja</option>
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label className="filter-label" style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Reportado por</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="Buscar por nombre..."
+                                        value={filterReporter}
+                                        onChange={e => { setFilterReporter(e.target.value); setPage(1); }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
 
             {/* Orders list */}
             <div className="orders-list">
-                {filteredOrders.length > 0 ? (
-                    filteredOrders.map(order => (
+                <div style={{ padding: '0 0.5rem 1rem', fontSize: '0.85rem', color: 'var(--color-text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Mostrando {pagedOrders.length} de {processedOrders.length} orden{processedOrders.length !== 1 ? 'es' : ''}</span>
+                </div>
+
+                {pagedOrders.length > 0 ? (
+                    pagedOrders.map(order => (
                         <div
                             key={order.id}
                             className="order-list-card"
@@ -149,11 +245,13 @@ const AllOrders: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="order-list-meta">
+                                    <span className="order-list-id-badge" style={{ background: 'var(--color-bg)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', display: 'inline-flex', alignItems: 'center' }}>
+                                        {formatOrderId(order.orderNumber)}
+                                    </span>
                                     <span className="meta-inline"><Building2 size={14} /> {order.building}</span>
                                     <span className="meta-inline"><MapPin size={14} /> {order.location}</span>
                                     <span className="meta-inline"><User size={14} /> {order.reporterName}</span>
                                     <span className="meta-inline"><Clock size={14} /> {order.date}</span>
-                                    <span className="order-list-id">{formatOrderId(order.orderNumber)}</span>
                                 </div>
                             </div>
                         </div>
@@ -162,18 +260,35 @@ const AllOrders: React.FC = () => {
                     <Card>
                         <CardContent>
                             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
-                                No hay órdenes con este filtro.
+                                No hay órdenes con estos filtros.
                             </div>
                         </CardContent>
                     </Card>
                 )}
             </div>
 
-            {/* Detail modal (especially for resolved orders) */}
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="pagination-bar" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '2rem' }}>
+                    <button className="page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', padding: '0.5rem', borderRadius: 'var(--radius-md)', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}>
+                        <ChevronLeft size={16} />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                        <button key={p} onClick={() => setPage(p)} style={{ background: p === page ? 'var(--color-primary)' : 'var(--color-surface)', color: p === page ? '#fff' : 'var(--color-text)', border: '1px solid var(--color-border)', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: p === page ? 700 : 500, transition: 'all 0.2s' }}>
+                            {p}
+                        </button>
+                    ))}
+                    <button className="page-btn" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', padding: '0.5rem', borderRadius: 'var(--radius-md)', cursor: page === totalPages ? 'not-allowed' : 'pointer', opacity: page === totalPages ? 0.5 : 1 }}>
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
+            )}
+
+            {/* Detail modal */}
             <Modal
                 isOpen={isDetailOpen}
                 onClose={() => setIsDetailOpen(false)}
-                title={`Detalle: ${selectedOrder?.id}`}
+                title={`Detalle: ${selectedOrder ? formatOrderId(selectedOrder.orderNumber) : ''}`}
                 maxWidth="750px"
             >
                 {selectedOrder && (
@@ -272,7 +387,7 @@ const AllOrders: React.FC = () => {
             <Modal
                 isOpen={isCloseModalOpen}
                 onClose={() => setIsCloseModalOpen(false)}
-                title={`Cerrar Orden: ${closeOrderTarget?.id}`}
+                title={`Cerrar Orden: ${closeOrderTarget ? formatOrderId(closeOrderTarget.orderNumber) : ''}`}
                 maxWidth="500px"
                 footer={
                     <>

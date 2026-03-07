@@ -1,31 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
-import { Input } from '../components/Input';
-import { Building2, MapPin, Clock, AlertTriangle, Droplets, User, Camera, CheckCircle2 } from 'lucide-react';
+import {
+    Building2, MapPin, Clock, AlertTriangle, Droplets,
+    User, Camera, CheckCircle2, SlidersHorizontal, ChevronLeft, ChevronRight, X
+} from 'lucide-react';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
 import './PendingOrders.css';
-
 import { supabase } from '../lib/supabase';
 
-// We will fetch workers dynamically.
+const PAGE_SIZE = 20;
+
 interface WorkerProfile {
     id: string;
     name: string;
     role: string;
 }
 
+type SortKey = 'date_desc' | 'date_asc' | 'priority_high' | 'priority_low';
+
 const PendingOrders: React.FC = () => {
     const { orders, assignWorker } = useWorkOrders();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedWorker, setSelectedWorker] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
     const [workersList, setWorkersList] = useState<WorkerProfile[]>([]);
 
-    React.useEffect(() => {
+    // Filter & sort state
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [filterBuilding, setFilterBuilding] = useState('');
+    const [filterPriority, setFilterPriority] = useState('');
+    const [filterReporter, setFilterReporter] = useState('');
+    const [sortKey, setSortKey] = useState<SortKey>('date_desc');
+
+    // Pagination
+    const [page, setPage] = useState(1);
+
+    useEffect(() => {
         const fetchWorkers = async () => {
             const { data, error } = await supabase
                 .from('profiles')
@@ -46,9 +59,33 @@ const PendingOrders: React.FC = () => {
 
     const pendingOrders = orders.filter(o => o.status === 'pending');
 
+    // Unique values for filter dropdowns
+    const uniqueBuildings = [...new Set(pendingOrders.map(o => o.building).filter(Boolean))];
+    const hasActiveFilters = filterBuilding || filterPriority || filterReporter;
+
+    // Apply filters
+    let processedOrders = pendingOrders
+        .filter(o => !filterBuilding || o.building === filterBuilding)
+        .filter(o => !filterPriority || o.priority === filterPriority)
+        .filter(o => !filterReporter || o.reporterName.toLowerCase().includes(filterReporter.toLowerCase()));
+
+    // Apply sort
+    processedOrders = [...processedOrders].sort((a, b) => {
+        if (sortKey === 'date_asc') return new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (sortKey === 'date_desc') return new Date(b.date).getTime() - new Date(a.date).getTime();
+        const priorityOrder = { alta: 3, media: 2, baja: 1 };
+        if (sortKey === 'priority_high') return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+        if (sortKey === 'priority_low') return (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0);
+        return 0;
+    });
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(processedOrders.length / PAGE_SIZE));
+    const pagedOrders = processedOrders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
     const handleOpenDetails = (order: WorkOrder) => {
         setSelectedOrder(order);
-        setSelectedWorker(''); // Reset assignment
+        setSelectedWorker('');
         setIsModalOpen(true);
     };
 
@@ -61,6 +98,14 @@ const PendingOrders: React.FC = () => {
             console.error('Error al asignar operario:', error);
             alert('Error al asignar la orden.');
         }
+    };
+
+    const handleClearFilters = () => {
+        setFilterBuilding('');
+        setFilterPriority('');
+        setFilterReporter('');
+        setSortKey('date_desc');
+        setPage(1);
     };
 
     const getCategoryIcon = (category: string) => {
@@ -77,13 +122,6 @@ const PendingOrders: React.FC = () => {
         }
     };
 
-    // Filter by search
-    const filteredPendingOrders = pendingOrders.filter(order =>
-        order.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.building.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     return (
         <div className="pending-orders-container animate-fade-in">
             <div className="dashboard-header mb-6">
@@ -95,13 +133,70 @@ const PendingOrders: React.FC = () => {
 
             <Card className="full-height-card">
                 <CardHeader className="orders-table-header">
-                    <Input
-                        placeholder="Buscar por ID, título o edificio..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="search-input-mw"
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <Button
+                            variant={isFilterOpen ? 'primary' : 'outline'}
+                            size="sm"
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        >
+                            <SlidersHorizontal size={15} style={{ marginRight: '0.375rem' }} />
+                            Filtrar y Ordenar
+                            {hasActiveFilters && <span style={{ marginLeft: '0.375rem', background: 'var(--color-primary-dark)', color: '#fff', borderRadius: '9999px', padding: '0 0.4rem', fontSize: '0.7rem', fontWeight: 700 }}>!</span>}
+                        </Button>
+                        {hasActiveFilters && (
+                            <button onClick={handleClearFilters} style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer', background: 'none', border: 'none' }}>
+                                <X size={13} /> Limpiar filtros
+                            </button>
+                        )}
+                        <span style={{ marginLeft: 'auto', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                            {processedOrders.length} orden{processedOrders.length !== 1 ? 'es' : ''}
+                        </span>
+                    </div>
+
+                    {/* Filter panel */}
+                    {isFilterOpen && (
+                        <div className="filter-panel">
+                            <div className="filter-panel-grid">
+                                <div className="filter-group">
+                                    <label className="filter-label">Ordenar por</label>
+                                    <select className="form-select" value={sortKey} onChange={e => { setSortKey(e.target.value as SortKey); setPage(1); }}>
+                                        <option value="date_desc">Fecha (más nueva primero)</option>
+                                        <option value="date_asc">Fecha (más antigua primero)</option>
+                                        <option value="priority_high">Prioridad (alta primero)</option>
+                                        <option value="priority_low">Prioridad (baja primero)</option>
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label className="filter-label">Edificio</label>
+                                    <select className="form-select" value={filterBuilding} onChange={e => { setFilterBuilding(e.target.value); setPage(1); }}>
+                                        <option value="">Todos</option>
+                                        {uniqueBuildings.map(b => <option key={b} value={b}>{b}</option>)}
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label className="filter-label">Prioridad</label>
+                                    <select className="form-select" value={filterPriority} onChange={e => { setFilterPriority(e.target.value); setPage(1); }}>
+                                        <option value="">Todas</option>
+                                        <option value="alta">Alta</option>
+                                        <option value="media">Media</option>
+                                        <option value="baja">Baja</option>
+                                    </select>
+                                </div>
+                                <div className="filter-group">
+                                    <label className="filter-label">Persona que reporta</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        placeholder="Buscar por nombre..."
+                                        value={filterReporter}
+                                        onChange={e => { setFilterReporter(e.target.value); setPage(1); }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </CardHeader>
+
                 <CardContent className="p-0">
                     <div className="table-responsive">
                         <table className="orders-table">
@@ -116,7 +211,7 @@ const PendingOrders: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredPendingOrders.map(order => (
+                                {pagedOrders.map(order => (
                                     <tr key={order.id} className="table-row-hover">
                                         <td className="font-medium text-muted">{formatOrderId(order.orderNumber)}</td>
                                         <td>
@@ -145,21 +240,36 @@ const PendingOrders: React.FC = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {filteredPendingOrders.length === 0 && (
+                                {pagedOrders.length === 0 && (
                                     <tr>
-                                        <td colSpan={6} className="text-center py-8 text-muted">No hay órdenes pendientes buscando por "{searchTerm}".</td>
+                                        <td colSpan={6} className="text-center py-8 text-muted">No hay órdenes pendientes con estos filtros.</td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="pagination-bar">
+                            <button className="page-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                                <ChevronLeft size={16} />
+                            </button>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                                <button key={p} className={`page-btn ${p === page ? 'active' : ''}`} onClick={() => setPage(p)}>{p}</button>
+                            ))}
+                            <button className="page-btn" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                title={`Detalle de Orden: ${selectedOrder?.id}`}
+                title={`Detalle: ${selectedOrder ? formatOrderId(selectedOrder.orderNumber) : ''}`}
                 maxWidth="800px"
                 footer={
                     <>
@@ -229,6 +339,9 @@ const PendingOrders: React.FC = () => {
                                             onChange={(e) => setSelectedWorker(e.target.value)}
                                         >
                                             <option value="" disabled>Seleccionar un operario...</option>
+                                            {workersList.length === 0 && (
+                                                <option disabled>No se encontraron operarios</option>
+                                            )}
                                             {workersList.map(w => (
                                                 <option key={w.id} value={w.id}>{w.name} ({w.role})</option>
                                             ))}

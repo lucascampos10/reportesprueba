@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Download, CheckCircle2, XCircle, Send, X } from 'lucide-react';
+import { Plus, FileText, Download, Send, X, Edit } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { useBudgets, formatBudgetId, type BudgetItem, type BudgetStatus } from '../context/BudgetContext';
@@ -108,13 +108,14 @@ const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) 
 const emptyItem = (): BudgetItem => ({ description: '', qty: 1, unit_price: '' as any });
 
 const Presupuestos: React.FC = () => {
-    const { budgets, addBudget, updateBudgetStatus } = useBudgets();
+    const { budgets, addBudget, updateBudget, updateBudgetStatus } = useBudgets();
     const { orders } = useWorkOrders();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [filterStatus, setFilterStatus] = useState<'all' | BudgetStatus>('all');
 
     // Form state
+    const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
     const [linkedOrderId, setLinkedOrderId] = useState('');
     const [building, setBuilding] = useState('');
     const [clientName, setClientName] = useState('');
@@ -141,7 +142,19 @@ const Presupuestos: React.FC = () => {
         setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
     };
 
+    const handleEditBudget = (b: ReturnType<typeof useBudgets>['budgets'][0]) => {
+        setEditingBudgetId(b.id);
+        setLinkedOrderId(b.orderId || '');
+        setBuilding(b.building);
+        setClientName(b.clientName);
+        setValidUntil(b.validUntil ? b.validUntil.split('T')[0] : '');
+        setNotes(b.notes || '');
+        setItems(b.items.length > 0 ? b.items : [emptyItem()]);
+        setIsModalOpen(true);
+    };
+
     const resetForm = () => {
+        setEditingBudgetId(null);
         setLinkedOrderId('');
         setBuilding('');
         setClientName('');
@@ -157,18 +170,32 @@ const Presupuestos: React.FC = () => {
         }
         setIsLoading(true);
         try {
-            await addBudget({
-                orderId: linkedOrderId || undefined,
-                building,
-                clientName,
-                items,
-                subtotal,
-                tax,
-                total,
-                status: 'borrador',
-                validUntil,
-                notes,
-            });
+            if (editingBudgetId) {
+                await updateBudget(editingBudgetId, {
+                    orderId: linkedOrderId || undefined,
+                    building,
+                    clientName,
+                    items,
+                    subtotal,
+                    tax,
+                    total,
+                    validUntil,
+                    notes,
+                });
+            } else {
+                await addBudget({
+                    orderId: linkedOrderId || undefined,
+                    building,
+                    clientName,
+                    items,
+                    subtotal,
+                    tax,
+                    total,
+                    status: 'borrador',
+                    validUntil,
+                    notes,
+                });
+            }
             setIsModalOpen(false);
             resetForm();
         } catch (err: any) {
@@ -247,17 +274,12 @@ const Presupuestos: React.FC = () => {
                                     <Download size={15} /> PDF
                                 </button>
                                 {b.status === 'borrador' && (
-                                    <button className="pres-action-btn blue" onClick={() => updateBudgetStatus(b.id, 'enviado')} title="Marcar como enviado">
-                                        <Send size={15} /> Enviar
-                                    </button>
-                                )}
-                                {b.status === 'enviado' && (
                                     <>
-                                        <button className="pres-action-btn green" onClick={() => updateBudgetStatus(b.id, 'aprobado')}>
-                                            <CheckCircle2 size={15} /> Aprobar
+                                        <button className="pres-action-btn" onClick={() => handleEditBudget(b)} title="Editar Presupuesto">
+                                            <Edit size={15} /> Editar
                                         </button>
-                                        <button className="pres-action-btn red" onClick={() => updateBudgetStatus(b.id, 'rechazado')}>
-                                            <XCircle size={15} /> Rechazar
+                                        <button className="pres-action-btn blue" onClick={() => updateBudgetStatus(b.id, 'enviado')} title="Marcar como enviado">
+                                            <Send size={15} /> Enviar
                                         </button>
                                     </>
                                 )}
@@ -271,7 +293,7 @@ const Presupuestos: React.FC = () => {
             <Modal
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); resetForm(); }}
-                title="Nuevo Presupuesto"
+                title={editingBudgetId ? "Editar Presupuesto" : "Nuevo Presupuesto"}
                 maxWidth="840px"
                 footer={
                     <>

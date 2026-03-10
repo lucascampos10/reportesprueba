@@ -274,7 +274,11 @@ const PendingOrders: React.FC = () => {
                 footer={
                     <>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleAssign} disabled={!selectedWorker}>Confirmar Asignación</Button>
+                        {selectedOrder?.budgetStatus === 'aprobado' ? (
+                            <Button onClick={handleAssign} disabled={!selectedWorker}>Confirmar Asignación</Button>
+                        ) : (
+                            <Button disabled>Confirme Presupuesto Primero</Button>
+                        )}
                     </>
                 }
             >
@@ -333,19 +337,26 @@ const PendingOrders: React.FC = () => {
                                 <Card className="assignment-card mix-glass">
                                     <CardContent className="p-4">
                                         <h4 className="info-title mb-3">Asignar Personal</h4>
-                                        <select
-                                            className="form-select"
-                                            value={selectedWorker}
-                                            onChange={(e) => setSelectedWorker(e.target.value)}
-                                        >
-                                            <option value="" disabled>Seleccionar un operario...</option>
-                                            {workersList.length === 0 && (
-                                                <option disabled>No se encontraron operarios</option>
-                                            )}
-                                            {workersList.map(w => (
-                                                <option key={w.id} value={w.id}>{w.name} ({w.role})</option>
-                                            ))}
-                                        </select>
+                                        {selectedOrder.budgetStatus === 'aprobado' ? (
+                                            <select
+                                                className="form-select"
+                                                value={selectedWorker}
+                                                onChange={(e) => setSelectedWorker(e.target.value)}
+                                            >
+                                                <option value="" disabled>Seleccionar un operario...</option>
+                                                {workersList.length === 0 && (
+                                                    <option disabled>No se encontraron operarios</option>
+                                                )}
+                                                {workersList.map(w => (
+                                                    <option key={w.id} value={w.id}>{w.name} ({w.role})</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', padding: '0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', textAlign: 'center' }}>
+                                                <strong>Atención:</strong> El presupuesto de esta orden no está aprobado. No se puede asignar personal.
+                                                <br />Estado actual: {selectedOrder.budgetStatus ? selectedOrder.budgetStatus : 'Sin Presupuesto'}
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
 

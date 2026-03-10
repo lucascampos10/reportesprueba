@@ -30,6 +30,7 @@ interface BudgetContextType {
     budgets: Budget[];
     addBudget: (b: Omit<Budget, 'id' | 'budgetNumber' | 'createdAt'>) => Promise<void>;
     updateBudgetStatus: (id: string, status: BudgetStatus) => Promise<void>;
+    updateBudget: (id: string, b: Partial<Omit<Budget, 'id' | 'budgetNumber' | 'createdAt'>>) => Promise<void>;
     fetchBudgets: () => Promise<void>;
 }
 
@@ -104,8 +105,26 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         fetchBudgets();
     };
 
+    const updateBudget = async (id: string, b: Partial<Omit<Budget, 'id' | 'budgetNumber' | 'createdAt'>>) => {
+        const updateData: any = {};
+        if (b.orderId !== undefined) updateData.order_id = b.orderId || null;
+        if (b.building !== undefined) updateData.building = b.building;
+        if (b.clientName !== undefined) updateData.client_name = b.clientName;
+        if (b.items !== undefined) updateData.items = b.items;
+        if (b.subtotal !== undefined) updateData.subtotal = b.subtotal;
+        if (b.tax !== undefined) updateData.tax = b.tax;
+        if (b.total !== undefined) updateData.total = b.total;
+        if (b.status !== undefined) updateData.status = b.status;
+        if (b.validUntil !== undefined) updateData.valid_until = b.validUntil || null;
+        if (b.notes !== undefined) updateData.notes = b.notes;
+
+        const { error } = await supabase.from('budgets').update(updateData).eq('id', id);
+        if (error) { console.error('Error updating budget:', error); throw error; }
+        fetchBudgets();
+    };
+
     return (
-        <BudgetContext.Provider value={{ budgets, addBudget, updateBudgetStatus, fetchBudgets }}>
+        <BudgetContext.Provider value={{ budgets, addBudget, updateBudgetStatus, updateBudget, fetchBudgets }}>
             {children}
         </BudgetContext.Provider>
     );

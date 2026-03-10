@@ -1,26 +1,31 @@
 import React, { useState } from 'react';
-import { Plus, Receipt, Download, FileText, Search, CreditCard } from 'lucide-react';
+import { Plus, Receipt, Download, FileText, CreditCard } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { Input } from '../components/Input';
 import { useReceipts, formatReceiptId } from '../context/ReceiptContext';
 import { useBudgets, formatBudgetId } from '../context/BudgetContext';
 import jsPDF from 'jspdf';
 import { logoBase64 } from '../assets/logoBase64';
-import './Presupuestos.css'; // Reuse card and modal styles
+import './Presupuestos.css';
+
+// SVG icons as components for specific needs
+const Building2 = ({ size, className }: any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="16" height="20" x="4" y="2" rx="2" ry="2" /><path d="M9 22v-4h6v4" /><path d="M8 6h.01" /><path d="M16 6h.01" /><path d="M8 10h.01" /><path d="M16 10h.01" /><path d="M8 14h.01" /><path d="M16 14h.01" /><path d="M15 2h2a2 2 0 0 1 2 2v18" /></svg>;
+const Banknote = ({ size, className }: any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="20" height="12" x="2" y="6" rx="2" /><circle cx="12" cy="12" r="2" /><path d="M6 12h.01M18 12h.01" /></svg>;
 
 const Recibos: React.FC = () => {
     const { receipts, addReceipt, isLoading: isLoadingReceipts } = useReceipts();
     const { budgets } = useBudgets();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
 
     // Form state
-    const [linkedBudgetId, setLinkedBudgetId] = useState('');
     const [clientName, setClientName] = useState('');
     const [amountWritten, setAmountWritten] = useState('');
     const [concept, setConcept] = useState('');
     const [totalAmount, setTotalAmount] = useState<number>(0);
+    const [linkedBudgetId, setLinkedBudgetId] = useState<string>('');
 
     const resetForm = () => {
         setLinkedBudgetId('');
@@ -166,67 +171,63 @@ const Recibos: React.FC = () => {
         doc.save(`${formatReceiptId(receipt.receiptNumber)}.pdf`);
     };
 
-    const filteredReceipts = receipts.filter(r =>
-        r.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        formatReceiptId(r.receiptNumber).includes(searchTerm)
-    );
-
     return (
-        <div className="animate-fade-in">
-            <div className="dashboard-header mb-6">
+        <div className="presupuestos-container animate-fade-in">
+            <div className="dashboard-header mb-6" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h1 className="page-title">Recibos de Pago</h1>
                     <p className="page-subtitle">Comprobantes oficiales de cobro por servicios realizados.</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)}>
-                    <Plus size={18} /> Nuevo Recibo
+                    <Plus size={16} style={{ marginRight: '0.4rem' }} /> Nuevo Recibo
                 </Button>
             </div>
 
-            {/* Search */}
-            <div className="search-filter-container mb-6">
-                <div className="search-input-wrapper">
-                    <Search className="search-icon" size={18} />
-                    <input
-                        type="search"
-                        placeholder="Buscar por cliente o nro de recibo..."
-                        className="search-input"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-            </div>
-
             {isLoadingReceipts ? (
-                <div className="flex justify-center p-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem' }}>
+                    <div className="animate-spin" style={{ width: 32, height: 32, border: '3px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%' }} />
                 </div>
-            ) : filteredReceipts.length === 0 ? (
-                <div className="empty-state">
-                    <div className="empty-icon"><Receipt size={48} /></div>
-                    <h2>No hay recibos todavía</h2>
-                    <p>Hacé clic en "Nuevo Recibo" para generar un comprobante.</p>
+            ) : receipts.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '35vh', gap: '1rem', textAlign: 'center' }}>
+                    <div style={{ padding: '1.5rem', borderRadius: '50%', background: 'rgba(16,185,129,0.1)', color: '#10B981' }}>
+                        <Receipt size={48} />
+                    </div>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>No hay recibos</h2>
+                    <p style={{ color: 'var(--color-text-muted)', maxWidth: '320px' }}>Emití tu primer recibo de pago.</p>
                 </div>
             ) : (
-                <div className="pres-grid">
-                    {filteredReceipts.map(receipt => (
+                <div className="pres-list">
+                    {receipts.map(receipt => (
                         <div key={receipt.id} className="pres-card">
-                            <div className="pres-card-header">
-                                <div className="pres-card-id">{formatReceiptId(receipt.receiptNumber)}</div>
-                                <div className="pres-card-date">{new Date(receipt.createdAt).toLocaleDateString()}</div>
+                            <div className="pres-card-top">
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                        <span className="pres-number">{formatReceiptId(receipt.receiptNumber)}</span>
+                                        <span className="status-badge status-aprobado">Pagado</span>
+                                        {receipt.budgetId && (
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                                → Ref. {formatBudgetId(budgets.find(b => b.id === receipt.budgetId)?.budgetNumber ?? 0)}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p style={{ marginTop: '0.3rem', fontWeight: 600 }}>{receipt.clientName}</p>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                        {new Date(receipt.createdAt).toLocaleDateString('es-AR')} · {receipt.concept}
+                                    </p>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div className="pres-total">${receipt.totalAmount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Monto Cobrado</div>
+                                </div>
                             </div>
-                            <h3 className="pres-card-client">{receipt.clientName}</h3>
-                            <div className="pres-card-total">
-                                <span>Total Cobrado:</span>
-                                <strong>${receipt.totalAmount.toLocaleString('es-AR')}</strong>
-                            </div>
+
                             <div className="pres-card-actions">
-                                <Button variant="outline" size="sm" onClick={() => generateReceiptPDF(receipt)}>
-                                    <Download size={14} /> PDF
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => generateReceiptPDF(receipt)}>
-                                    <FileText size={14} /> Ver
-                                </Button>
+                                <button className="pres-action-btn" onClick={() => generateReceiptPDF(receipt)} title="Descargar PDF">
+                                    <Download size={15} /> PDF
+                                </button>
+                                <button className="pres-action-btn" onClick={() => generateReceiptPDF(receipt)} title="Ver Detalles">
+                                    <FileText size={15} /> Ver
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -238,7 +239,7 @@ const Recibos: React.FC = () => {
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); resetForm(); }}
                 title="Emitir Recibo de Pago"
-                maxWidth="600px"
+                maxWidth="650px"
                 footer={
                     <>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
@@ -263,56 +264,50 @@ const Recibos: React.FC = () => {
                         </select>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Cliente / Edificio *</label>
-                        <div className="input-with-icon">
-                            <Building2 size={16} />
-                            <input
-                                className="form-input"
-                                value={clientName}
-                                onChange={e => setClientName(e.target.value)}
-                                placeholder="Nombre completo o Edificio"
-                                required
-                            />
-                        </div>
-                    </div>
+                    <Input
+                        label="Cliente / Edificio *"
+                        value={clientName}
+                        onChange={e => setClientName(e.target.value)}
+                        placeholder="Nombre completo o Edificio"
+                        leftIcon={<Building2 size={18} />}
+                        required
+                    />
 
                     <div className="form-group">
                         <label className="form-label">Recibí la suma de pesos *</label>
-                        <textarea
-                            className="form-input"
-                            rows={2}
-                            value={amountWritten}
-                            onChange={e => setAmountWritten(e.target.value)}
-                            placeholder="Ej: Cien mil ochocientos pesos con 00/100"
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">En concepto de *</label>
-                        <input
-                            className="form-input"
-                            value={concept}
-                            onChange={e => setConcept(e.target.value)}
-                            placeholder="Ej: Pago de abono mensual Marzo 2024"
-                            required
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label className="form-label">Total en números ($) *</label>
-                        <div className="input-with-icon">
-                            <CreditCard size={16} />
-                            <input
-                                className="form-input"
-                                type="number"
-                                value={totalAmount || ''}
-                                onChange={e => setTotalAmount(Number(e.target.value))}
-                                placeholder="0.00"
+                        <div className="textarea-container">
+                            <Banknote className="textarea-icon" size={18} />
+                            <textarea
+                                className="form-textarea"
+                                rows={2}
+                                value={amountWritten}
+                                onChange={e => setAmountWritten(e.target.value)}
+                                placeholder="Ej: Cien mil ochocientos pesos con 00/100"
                                 required
+                                style={{ paddingLeft: '2.5rem' }}
                             />
                         </div>
+                    </div>
+
+                    <Input
+                        label="En concepto de *"
+                        value={concept}
+                        onChange={e => setConcept(e.target.value)}
+                        placeholder="Ej: Pago de abono mensual Marzo 2024"
+                        leftIcon={<FileText size={18} />}
+                        required
+                    />
+
+                    <div style={{ alignSelf: 'flex-end', width: '240px' }}>
+                        <Input
+                            label="Total en números ($) *"
+                            type="number"
+                            value={totalAmount || ''}
+                            onChange={e => setTotalAmount(Number(e.target.value))}
+                            placeholder="0.00"
+                            leftIcon={<CreditCard size={18} />}
+                            required
+                        />
                     </div>
                 </div>
             </Modal>
@@ -320,8 +315,4 @@ const Recibos: React.FC = () => {
     );
 };
 
-// Internal icon for Building2 as it was missing from imports
-const Building2 = ({ size, className }: any) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="16" height="20" x="4" y="2" rx="2" ry="2" /><path d="M9 22v-4h6v4" /><path d="M8 6h.01" /><path d="M16 6h.01" /><path d="M8 10h.01" /><path d="M16 10h.01" /><path d="M8 14h.01" /><path d="M16 14h.01" /><path d="M15 2h2a2 2 0 0 1 2 2v18" /></svg>;
-
 export default Recibos;
-

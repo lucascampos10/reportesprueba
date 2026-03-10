@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Receipt, Download, FileText, CreditCard } from 'lucide-react';
+import { Plus, Receipt, Download, MessageCircle, CreditCard, FileText } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { Input } from '../components/Input';
@@ -175,6 +175,19 @@ const Recibos: React.FC = () => {
         doc.save(`${formatReceiptId(receipt.receiptNumber)}.pdf`);
     };
 
+    const handleWhatsAppShare = (receipt: any) => {
+        const message = `*NOVAK SERVICIOS - COMPROBANTE DE PAGO*%0A%0A` +
+            `Hola! Te envío los detalles del recibo generado:%0A%0A` +
+            `*N° Recibo:* ${formatReceiptId(receipt.receiptNumber)}%0A` +
+            `*Fecha:* ${new Date(receipt.createdAt).toLocaleDateString('es-AR')}%0A` +
+            `*Cliente:* ${receipt.clientName}%0A` +
+            `*Concepto:* ${receipt.concept}%0A` +
+            `*Monto:* $${receipt.totalAmount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}%0A%0A` +
+            `¡Muchas gracias!`;
+
+        window.open(`https://wa.me/?text=${message}`, '_blank');
+    };
+
     return (
         <div className="presupuestos-container animate-fade-in">
             <div className="dashboard-header mb-6" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
@@ -229,8 +242,8 @@ const Recibos: React.FC = () => {
                                 <button className="pres-action-btn" onClick={() => generateReceiptPDF(receipt)} title="Descargar PDF">
                                     <Download size={15} /> PDF
                                 </button>
-                                <button className="pres-action-btn" onClick={() => generateReceiptPDF(receipt)} title="Ver Detalles">
-                                    <FileText size={15} /> Ver
+                                <button className="pres-action-btn" onClick={() => handleWhatsAppShare(receipt)} title="Enviar por WhatsApp" style={{ color: '#25D366' }}>
+                                    <MessageCircle size={15} /> WhatsApp
                                 </button>
                             </div>
                         </div>
@@ -286,10 +299,10 @@ const Recibos: React.FC = () => {
                     </div>
 
                     <Input
-                        label="Cliente / Edificio *"
+                        label={linkedBudgetId ? "Edificio / Cliente *" : "Administrador / Responsable *"}
                         value={clientName}
                         onChange={e => setClientName(e.target.value)}
-                        placeholder="Nombre completo o Edificio"
+                        placeholder={linkedBudgetId ? "Nombre del edificio" : "Nombre del Administrador (Manual)"}
                         leftIcon={<Building2 size={18} />}
                         required
                     />

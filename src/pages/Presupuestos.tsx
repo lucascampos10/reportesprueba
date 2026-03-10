@@ -31,40 +31,47 @@ const statusClass: Record<BudgetStatus, string> = {
 const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) => {
     const doc = new jsPDF();
 
-    // Header
+    // ─── Header background ────────────────────────────────────────────
     doc.setFillColor(26, 60, 52);
-    doc.rect(0, 0, 210, 35, 'F');
+    doc.rect(0, 0, 210, 42, 'F');
+
+    // ─── LEFT: Company info ───────────────────────────────────────────
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('NOVAK SOLUCIONES', 15, 15);
+    doc.text('NOVAK SERVICIOS', 15, 15);
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text('Servicios de Limpieza y Mantenimiento | CUIT: XX-XXXXXXXX-X', 15, 22);
-    doc.text(`PRESUPUESTO ${formatBudgetId(budget.budgetNumber)}`, 15, 30);
+    doc.text('BV Rivadavia 3848', 15, 22);
+    doc.text('Tel: 3517585241', 15, 28);
+    doc.text('novak.limpieza@gmail.com', 15, 34);
 
-    // Client info
-    doc.setTextColor(30, 30, 30);
-    doc.setFontSize(10);
+    // ─── RIGHT: Budget title + details ───────────────────────────────
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('PRESUPUESTO PARA:', 15, 48);
-    doc.setFont('helvetica', 'normal');
-    doc.text(budget.clientName, 15, 55);
-    doc.text(`Edificio: ${budget.building}`, 15, 61);
+    doc.text('PRESUPUESTO', 195, 13, { align: 'right' });
 
-    // Budget info
-    doc.setFont('helvetica', 'bold');
-    doc.text('DATOS DEL PRESUPUESTO:', 130, 48);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Nro: ${formatBudgetId(budget.budgetNumber)}`, 130, 55);
-    doc.text(`Fecha: ${new Date(budget.createdAt).toLocaleDateString('es-AR')}`, 130, 61);
+    doc.text(`N°: ${formatBudgetId(budget.budgetNumber)}`, 195, 22, { align: 'right' });
+    doc.text(`Fecha: ${new Date(budget.createdAt).toLocaleDateString('es-AR')}`, 195, 28, { align: 'right' });
     if (budget.validUntil) {
-        doc.text(`Válido hasta: ${new Date(budget.validUntil).toLocaleDateString('es-AR')}`, 130, 67);
+        doc.text(`Vencimiento: ${new Date(budget.validUntil).toLocaleDateString('es-AR')}`, 195, 34, { align: 'right' });
     }
+
+    // ─── Client info block ─────────────────────────────────────────
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PRESUPUESTO PARA:', 15, 54);
+    doc.setFont('helvetica', 'normal');
+    doc.text(budget.clientName, 15, 60);
+    doc.text(`Edificio: ${budget.building}`, 15, 66);
 
     // Items table
     autoTable(doc, {
-        startY: 75,
+        startY: 80,
         head: [['Descripción', 'Precio ($)']],
         body: budget.items.map(item => [
             item.description,

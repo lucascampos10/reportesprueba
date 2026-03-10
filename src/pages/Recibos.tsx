@@ -176,13 +176,14 @@ const Recibos: React.FC = () => {
     };
 
     const handleWhatsAppShare = (receipt: any) => {
+        // Trigger download of the PDF so the user has it ready
+        generateReceiptPDF(receipt);
+
         const message = `*NOVAK SERVICIOS - COMPROBANTE DE PAGO*%0A%0A` +
-            `Hola! Te envío los detalles del recibo generado:%0A%0A` +
+            `Hola! Te envío el recibo generado por los servicios realizados.%0A%0A` +
             `*N° Recibo:* ${formatReceiptId(receipt.receiptNumber)}%0A` +
             `*Fecha:* ${new Date(receipt.createdAt).toLocaleDateString('es-AR')}%0A` +
-            `*Cliente:* ${receipt.clientName}%0A` +
-            `*Concepto:* ${receipt.concept}%0A` +
-            `*Monto:* $${receipt.totalAmount.toLocaleString('es-AR', { minimumFractionDigits: 2 })}%0A%0A` +
+            `*Cliente:* ${receipt.clientName}%0A%0A` +
             `¡Muchas gracias!`;
 
         window.open(`https://wa.me/?text=${message}`, '_blank');

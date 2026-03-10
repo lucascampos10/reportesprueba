@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Download, Send, X, Edit } from 'lucide-react';
+import { Plus, FileText, Download, Send, X, Edit, MessageCircle } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { useBudgets, formatBudgetId, type BudgetItem, type BudgetStatus } from '../context/BudgetContext';
@@ -29,7 +29,7 @@ const statusClass: Record<BudgetStatus, string> = {
 };
 
 // ─── PDF Generation ────────────────────────────────────────────────────────
-const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) => {
+const generateBudgetPDF = (budget: any) => {
     const doc = new jsPDF();
 
     // ─── Header background ────────────────────────────────────────────
@@ -80,7 +80,7 @@ const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) 
     autoTable(doc, {
         startY: 80,
         head: [['Descripción', 'Cant.', 'Precio Unit.', 'Subtotal']],
-        body: budget.items.map(item => [
+        body: budget.items.map((item: any) => [
             item.description,
             item.qty.toString(),
             `$${Number(item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
@@ -156,7 +156,7 @@ const Presupuestos: React.FC = () => {
         setItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
     };
 
-    const handleEditBudget = (b: ReturnType<typeof useBudgets>['budgets'][0]) => {
+    const handleEditBudget = (b: any) => {
         setEditingBudgetId(b.id);
         setLinkedOrderId(b.orderId || '');
         setBuilding(b.building);
@@ -218,6 +218,20 @@ const Presupuestos: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleWhatsAppShare = (budget: any) => {
+        // Trigger download of the PDF so the user has it ready
+        generateBudgetPDF(budget);
+
+        const message = `*NOVAK SERVICIOS - PRESUPUESTO*%0A%0A` +
+            `Hola! Te envío el presupuesto solicitado por los servicios realizados.%0A%0A` +
+            `*N° Presupuesto:* ${formatBudgetId(budget.budgetNumber)}%0A` +
+            `*Fecha:* ${new Date(budget.createdAt).toLocaleDateString('es-AR')}%0A` +
+            `*Edificio/Cliente:* ${budget.building}%0A%0A` +
+            `¡Muchas gracias!`;
+
+        window.open(`https://wa.me/?text=${message}`, '_blank');
     };
 
     const filtered = filterStatus === 'all' ? budgets : budgets.filter(b => b.status === filterStatus);
@@ -286,6 +300,9 @@ const Presupuestos: React.FC = () => {
                             <div className="pres-card-actions">
                                 <button className="pres-action-btn" onClick={() => generateBudgetPDF(b)} title="Descargar PDF">
                                     <Download size={15} /> PDF
+                                </button>
+                                <button className="pres-action-btn" onClick={() => handleWhatsAppShare(b)} title="Enviar por WhatsApp" style={{ color: '#25D366' }}>
+                                    <MessageCircle size={15} /> WhatsApp
                                 </button>
                                 {b.status === 'borrador' && (
                                     <>

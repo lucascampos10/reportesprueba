@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { FileText, Receipt, TrendingUp } from 'lucide-react';
+import { FileText, Receipt, TrendingUp, ArrowUpRight } from 'lucide-react';
 import './Finanzas.css';
 
 const Finanzas: React.FC = () => {
@@ -9,11 +9,22 @@ const Finanzas: React.FC = () => {
             <div className="dashboard-header mb-6">
                 <div>
                     <h1 className="page-title">Finanzas</h1>
-                    <p className="page-subtitle">Generá, enviá y archivá documentos legales vinculados a tus órdenes.</p>
+                    <p className="page-subtitle">Panel de control integral de documentos, cobros y reportes.</p>
                 </div>
             </div>
 
             <div className="finanzas-cards">
+                <NavLink to="/admin/finanzas/general" className="finanzas-card">
+                    <div className="finanzas-card-icon general">
+                        <TrendingUp size={36} />
+                    </div>
+                    <div className="finanzas-card-body">
+                        <h2>General</h2>
+                        <p>Visión global del estado financiero, KPIs de ganancias, pendientes de cobro y reportes automáticos.</p>
+                    </div>
+                    <div className="finanzas-card-arrow">→</div>
+                </NavLink>
+
                 <NavLink to="/admin/finanzas/presupuestos" className="finanzas-card">
                     <div className="finanzas-card-icon presupuestos">
                         <FileText size={36} />
@@ -38,11 +49,11 @@ const Finanzas: React.FC = () => {
 
                 <div className="finanzas-card finanzas-card-soon">
                     <div className="finanzas-card-icon reportes">
-                        <TrendingUp size={36} />
+                        <ArrowUpRight size={36} />
                     </div>
                     <div className="finanzas-card-body">
-                        <h2>Reportes</h2>
-                        <p>Análisis de ingresos, gastos y estadísticas financieras del período.</p>
+                        <h2>Estadísticas</h2>
+                        <p>Análisis detallado de flujos de caja y proyecciones de crecimiento anual.</p>
                     </div>
                     <span className="soon-chip">Próximamente</span>
                 </div>

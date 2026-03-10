@@ -16,6 +16,7 @@ import LandingPage from './pages/LandingPage';
 import Finanzas from './pages/Finanzas';
 import Presupuestos from './pages/Presupuestos';
 import Recibos from './pages/Recibos';
+import FinanceOverview from './pages/FinanceOverview';
 import { AgendaPage, ContactosPage } from './pages/ComingSoon';
 import { WorkOrderProvider } from './context/WorkOrderContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -88,6 +89,7 @@ const App: React.FC = () => {
 
                   {/* Finanzas */}
                   <Route path="finanzas" element={<Finanzas />} />
+                  <Route path="finanzas/general" element={<FinanceOverview />} />
                   <Route path="finanzas/presupuestos" element={<Presupuestos />} />
                   <Route path="finanzas/recibos" element={<Recibos />} />
 

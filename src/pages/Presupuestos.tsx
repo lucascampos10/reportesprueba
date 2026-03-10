@@ -293,7 +293,7 @@ const Presupuestos: React.FC = () => {
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
                                     <div className="pres-total">${b.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Total sin IVA</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Precio total con IVA</div>
                                 </div>
                             </div>
 

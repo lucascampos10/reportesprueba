@@ -5,12 +5,15 @@ import {
     Download,
     ClipboardList,
     Clock,
-    ArrowRight
+    ArrowRight,
+    Building2
 } from 'lucide-react';
 import { useBudgets, formatBudgetId } from '../context/BudgetContext';
 import { useWorkOrders } from '../context/WorkOrderContext';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
+import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
+import { supabase } from '../lib/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { logoBase64 } from '../assets/logoBase64';
@@ -74,10 +77,42 @@ const EdificioDashboard: React.FC = () => {
     const { orders } = useWorkOrders();
     const [activeTab] = useState<'overview' | 'reports' | 'budgets'>('overview');
 
+    // Password confirmation state
+    const [isPswModalOpen, setIsPswModalOpen] = useState(false);
+    const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
+
     // Filter relevant data
     const pendingBudgets = budgets.filter(b => b.status === 'enviado');
     const activeOrders = orders.filter(o => o.status !== 'resolved');
     const recentOrders = orders.slice(0, 5);
+
+    // Get unique departments from managed buildings or fallback to generic ones
+    const activeDepts = Array.from(new Set(orders.map(o => o.department).filter(Boolean)));
+    const genericDepts = ['1A', '1B', '2A', '2B', '3A', '3B', '4A', '4B', '5A', '5B'];
+    const departments = activeDepts.length > 0 ? activeDepts : genericDepts;
+
+    const handleApproveClick = (budgetId: string) => {
+        setSelectedBudgetId(budgetId);
+        setIsPswModalOpen(true);
+    };
+
+    const confirmApproval = async (password: string) => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || !user.email) throw new Error('Usuario no encontrado');
+
+        // Verify password by attempting to sign in
+        const { error } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: password,
+        });
+
+        if (error) throw error;
+
+        // If success, update budget
+        if (selectedBudgetId) {
+            await updateBudgetStatus(selectedBudgetId, 'aprobado');
+        }
+    };
 
     return (
         <div className="finance-overview animate-fade-in" style={{ padding: '2rem' }}>
@@ -150,7 +185,8 @@ const EdificioDashboard: React.FC = () => {
                                     <div className={`action-indicator ${order.priority === 'alta' ? 'danger' : 'warning'}`}></div>
                                     <div className="action-details">
                                         <p className="action-title">{order.title}</p>
-                                        <p className="action-meta">{order.building} · {order.reporterName}</p>
+                                        <p className="action-meta">{order.building} · {order.department || 'Área Común'}</p>
+                                        <p className="action-meta" style={{ fontSize: '0.7rem' }}>Reportado por: {order.reporterName}</p>
                                     </div>
                                     <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}>
                                         {order.status === 'pending' ? 'Pendiente' : order.status === 'in_progress' ? 'En Curso' : 'Resuelto'}
@@ -164,6 +200,36 @@ const EdificioDashboard: React.FC = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* Departamentos Section */}
+                    {departments.length > 0 && (
+                        <div style={{ marginTop: '2.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Building2 size={18} className="text-primary" />
+                                Estructura del Consorcio
+                            </h3>
+                            <div className="glass-card" style={{ padding: '1.25rem', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>Unidades funcionales bajo seguimiento:</p>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', gap: '0.75rem' }}>
+                                    {departments.map(dept => (
+                                        <div key={dept} style={{
+                                            background: activeDepts.includes(dept) ? 'var(--color-primary-light)' : 'rgba(255,255,255,0.05)',
+                                            border: activeDepts.includes(dept) ? '1px solid var(--color-primary)' : '1px solid transparent',
+                                            padding: '0.6rem 0.4rem',
+                                            borderRadius: '8px',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 600,
+                                            textAlign: 'center',
+                                            color: activeDepts.includes(dept) ? 'var(--color-primary-dark)' : 'inherit',
+                                            transition: 'all 0.2s ease'
+                                        }}>
+                                            {dept}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Approvals in progress */}
@@ -184,7 +250,7 @@ const EdificioDashboard: React.FC = () => {
                                         </div>
                                         <p className="action-meta">{formatBudgetId(budget.budgetNumber)} · {new Date(budget.createdAt).toLocaleDateString()}</p>
                                         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-                                            <Button size="sm" variant="primary" style={{ background: '#10B981', color: 'white', border: 'none' }} onClick={() => { if (confirm('¿Aprobar presupuesto?')) updateBudgetStatus(budget.id, 'aprobado') }}>Aprobar</Button>
+                                            <Button size="sm" variant="primary" style={{ background: '#10B981', color: 'white', border: 'none' }} onClick={() => handleApproveClick(budget.id)}>Aprobar</Button>
                                             <Button size="sm" variant="outline" style={{ color: '#EF4444', borderColor: '#EF4444' }} onClick={() => { if (confirm('¿Rechazar presupuesto?')) updateBudgetStatus(budget.id, 'rechazado') }}>Rechazar</Button>
                                             <Button size="sm" variant="outline" onClick={() => generateBudgetPDF(budget)}><Download size={12} /></Button>
                                         </div>
@@ -200,6 +266,15 @@ const EdificioDashboard: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <PasswordConfirmModal
+                isOpen={isPswModalOpen}
+                onClose={() => setIsPswModalOpen(false)}
+                onConfirm={confirmApproval}
+                title="Confirmar Aprobación"
+                message="Para aprobar este presupuesto, por favor ingresá tu contraseña de administrador como confirmación."
+            />
+
             {activeTab === 'overview' && null}
         </div>
     );

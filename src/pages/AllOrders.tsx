@@ -389,7 +389,7 @@ const AllOrders: React.FC = () => {
                                                 <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.85rem', color: 'var(--color-text)' }}>
                                                     {linkedBudget.items.map((item, idx) => (
                                                         <li key={idx} style={{ marginBottom: '0.25rem' }}>
-                                                            {item.description} — ${Number(item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                                            {item.qty}x {item.description} — ${Number(item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                                                         </li>
                                                     ))}
                                                 </ul>

@@ -11,22 +11,28 @@ export const generateBudgetPDF = (budget: any) => {
     doc.setFillColor(26, 60, 52);
     doc.rect(0, 0, 210, 42, 'F');
 
-    // ─── LEFT: Company info ───────────────────────────────────────────
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('NOVAK SERVICIOS', 15, 15);
+    // ─── LEFT: Logo + Company info ──────────────────────────────────
+    try {
+        doc.addImage('/logo-novak.png', 'PNG', 15, 10, 22, 22);
+    } catch (e) {
+        // Continue if image fails
+    }
 
-    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NOVAK SERVICIOS', 42, 16);
+
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
-    doc.text('BV Rivadavia 3848', 15, 22);
-    doc.text('Tel: 3517585241', 15, 28);
-    doc.text('novak.limpieza@gmail.com', 15, 34);
+    doc.text('BV Rivadavia 3848', 42, 22);
+    doc.text('Tel: 3517585241', 42, 27);
+    doc.text('novak.limpieza@gmail.com', 42, 32);
 
     // ─── RIGHT: Budget title + details ───────────────────────────────
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('PRESUPUESTO', 195, 13, { align: 'right' });
+    doc.text('PRESUPUESTO', 195, 14, { align: 'right' });
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -47,13 +53,16 @@ export const generateBudgetPDF = (budget: any) => {
 
     autoTable(doc, {
         startY: 80,
-        head: [['Descripción', 'Precio ($)']],
+        head: [['Descripción', 'Cant.', 'Precio Unit.', 'Subtotal']],
         body: budget.items.map((item: any) => [
             item.description,
+            item.qty.toString(),
             `$${Number(item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
+            `$${(Number(item.qty) * Number(item.unit_price)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
         ]),
         headStyles: { fillColor: [26, 60, 52], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [247, 247, 247] },
+        columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 10;

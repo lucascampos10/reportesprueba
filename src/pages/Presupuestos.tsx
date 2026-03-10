@@ -35,22 +35,28 @@ const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) 
     doc.setFillColor(26, 60, 52);
     doc.rect(0, 0, 210, 42, 'F');
 
-    // ─── LEFT: Company info ───────────────────────────────────────────
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('NOVAK SERVICIOS', 15, 15);
+    // ─── LEFT: Logo + Company info ──────────────────────────────────
+    try {
+        doc.addImage('/logo-novak.png', 'PNG', 15, 10, 22, 22);
+    } catch (e) {
+        // Continue if image fails
+    }
 
-    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('NOVAK SERVICIOS', 42, 16);
+
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
-    doc.text('BV Rivadavia 3848', 15, 22);
-    doc.text('Tel: 3517585241', 15, 28);
-    doc.text('novak.limpieza@gmail.com', 15, 34);
+    doc.text('BV Rivadavia 3848', 42, 22);
+    doc.text('Tel: 3517585241', 42, 27);
+    doc.text('novak.limpieza@gmail.com', 42, 32);
 
     // ─── RIGHT: Budget title + details ───────────────────────────────
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('PRESUPUESTO', 195, 13, { align: 'right' });
+    doc.text('PRESUPUESTO', 195, 14, { align: 'right' });
 
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -72,14 +78,16 @@ const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) 
     // Items table
     autoTable(doc, {
         startY: 80,
-        head: [['Descripción', 'Precio ($)']],
+        head: [['Descripción', 'Cant.', 'Precio Unit.', 'Subtotal']],
         body: budget.items.map(item => [
             item.description,
+            item.qty.toString(),
             `$${Number(item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
+            `$${(Number(item.qty) * Number(item.unit_price)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
         ]),
         headStyles: { fillColor: [26, 60, 52], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [247, 247, 247] },
-        columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'right' } },
+        columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 10;
@@ -110,7 +118,7 @@ const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) 
 };
 
 // ─── Helper ────────────────────────────────────────────────────────────────
-const emptyItem = (): BudgetItem => ({ description: '', unit_price: '' as any });
+const emptyItem = (): BudgetItem => ({ description: '', qty: 1, unit_price: '' as any });
 
 const Presupuestos: React.FC = () => {
     const { budgets, addBudget, updateBudget, updateBudgetStatus } = useBudgets();
@@ -128,7 +136,7 @@ const Presupuestos: React.FC = () => {
     const [notes, setNotes] = useState('');
     const [items, setItems] = useState<BudgetItem[]>([emptyItem()]);
 
-    const subtotal = items.reduce((sum, i) => sum + (Number(i.unit_price) || 0), 0);
+    const subtotal = items.reduce((sum, i) => sum + (Number(i.qty) || 0) * (Number(i.unit_price) || 0), 0);
     const tax = 0; // Removed IVA calculation
     const total = subtotal;
 
@@ -340,27 +348,39 @@ const Presupuestos: React.FC = () => {
                         <label className="form-label">Ítems del presupuesto *</label>
                         <div className="pres-items-table">
                             <div className="pres-items-header">
-                                <span style={{ flex: 4 }}>Descripción</span>
-                                <span style={{ flex: 2, textAlign: 'right' }}>Precio ($)</span>
+                                <span style={{ flex: 3 }}>Descripción</span>
+                                <span style={{ flex: 1 }}>Cant.</span>
+                                <span style={{ flex: 1.5 }}>P. Unit. ($)</span>
+                                <span style={{ flex: 1.5, textAlign: 'right' }}>Subtotal</span>
                                 <span style={{ width: '24px' }}></span>
                             </div>
                             {items.map((item, idx) => (
                                 <div key={idx} className="pres-item-row">
                                     <input
                                         className="form-input"
-                                        style={{ flex: 4 }}
+                                        style={{ flex: 3 }}
                                         placeholder="Descripción del servicio"
                                         value={item.description}
                                         onChange={e => updateItem(idx, 'description', e.target.value)}
                                     />
                                     <input
                                         className="form-input"
-                                        style={{ flex: 2, textAlign: 'right' }}
+                                        style={{ flex: 1 }}
+                                        type="number" min={1}
+                                        value={item.qty}
+                                        onChange={e => updateItem(idx, 'qty', Number(e.target.value))}
+                                    />
+                                    <input
+                                        className="form-input"
+                                        style={{ flex: 1.5 }}
                                         type="number" min={0} step={0.01}
                                         placeholder="0.00"
                                         value={item.unit_price === ('' as any) ? '' : item.unit_price}
                                         onChange={e => updateItem(idx, 'unit_price', Number(e.target.value))}
                                     />
+                                    <span style={{ flex: 1.5, textAlign: 'right', fontSize: '0.85rem', fontWeight: 600, alignSelf: 'center' }}>
+                                        ${((Number(item.qty) || 0) * (Number(item.unit_price) || 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                    </span>
                                     <button
                                         onClick={() => setItems(items.filter((_, i) => i !== idx))}
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', alignSelf: 'center', padding: '0.25rem' }}

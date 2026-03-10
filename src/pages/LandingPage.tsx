@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { Camera, X, CheckCircle2, MessageSquare, Mail, AlertTriangle } from 'lucide-react';
+import { Camera, X, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useWorkOrders } from '../context/WorkOrderContext';
-import type { ContactMethod, Priority } from '../context/WorkOrderContext';
+import type { Priority } from '../context/WorkOrderContext';
 import { uploadImage } from '../lib/storage';
 import './LandingPage.css';
 
@@ -14,18 +14,18 @@ const LandingPage: React.FC = () => {
     const { addOrder } = useWorkOrders();
     const [step, setStep] = useState<1 | 2>(1);
     const [isLoading, setIsLoading] = useState(false);
-    const [images, setImages] = useState<string[]>([]);       // preview URLs
-    const [imageFiles, setImageFiles] = useState<File[]>([]);  // actual File objects for upload
+    const [images, setImages] = useState<string[]>([]);
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
 
     // Form fields
     const [reporterName, setReporterName] = useState('');
     const [building, setBuilding] = useState('');
     const [department, setDepartment] = useState('');
-    const [contactMethod, setContactMethod] = useState<ContactMethod>('whatsapp');
     const [contactValue, setContactValue] = useState('');
     const [category, setCategory] = useState('');
     const [priority, setPriority] = useState<Priority>('media');
     const [location, setLocation] = useState('');
+    const [availability, setAvailability] = useState('');
     const [description, setDescription] = useState('');
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +47,6 @@ const LandingPage: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // Upload all photos to Supabase Storage first, get public URLs
             const uploadedUrls: string[] = [];
             for (const file of imageFiles) {
                 const url = await uploadImage(file, 'reportes');
@@ -55,19 +54,20 @@ const LandingPage: React.FC = () => {
             }
 
             await addOrder({
-                title: `Reporte en ${location}`,
+                title: `Reporte: ${category} en ${building}`,
                 description,
                 category,
                 building,
                 department,
                 location,
                 reporterName,
-                contactMethod,
+                contactMethod: 'whatsapp',
                 contactValue,
                 priority,
                 images: uploadedUrls,
+                availability,
             });
-            setStep(2); // Success step
+            setStep(2);
         } catch (error) {
             console.error('Error submitting order:', error);
             alert('Hubo un error al enviar el reporte. Por favor, intenta de nuevo.');
@@ -87,6 +87,7 @@ const LandingPage: React.FC = () => {
         setCategory('');
         setPriority('media');
         setLocation('');
+        setAvailability('');
         setDescription('');
     };
 
@@ -99,9 +100,9 @@ const LandingPage: React.FC = () => {
                         <div className="success-icon-wrapper">
                             <CheckCircle2 size={64} />
                         </div>
-                        <h2 className="success-title">¡Orden Reportada Exitosamente!</h2>
+                        <h2 className="success-title">¡Reporte Enviado!</h2>
                         <p className="success-message">
-                            Tu reporte ha sido registrado en nuestro sistema. Te notificaremos las novedades a través de {contactMethod === 'whatsapp' ? 'WhatsApp' : 'Correo Electrónico'}.
+                            Hemos recibido tu reporte. Nos pondremos en contacto con vos a la brevedad por **WhatsApp** para coordinar la solución.
                         </p>
                         <Button onClick={resetForm}>
                             Enviar Otro Reporte
@@ -116,7 +117,6 @@ const LandingPage: React.FC = () => {
         <div className="landing-container">
             <div className="landing-glow"></div>
 
-            {/* Admin Login Button in corner */}
             <button
                 className="admin-login-btn"
                 onClick={() => navigate('/login')}
@@ -136,7 +136,7 @@ const LandingPage: React.FC = () => {
                     <form onSubmit={handleSubmit}>
                         <CardHeader className="text-center pb-2">
                             <CardTitle>Reportar un Problema</CardTitle>
-                            <p className="text-sm text-muted mt-2">Por favor, danos los detalles para solucionarlo lo antes posible.</p>
+                            <p className="text-sm text-muted mt-2">Completuá los datos para que podamos ayudarte lo antes posible.</p>
                         </CardHeader>
 
                         <CardContent className="landing-form-content">
@@ -151,71 +151,38 @@ const LandingPage: React.FC = () => {
                                         onChange={(e) => setReporterName(e.target.value)}
                                         required
                                     />
-
-                                    <div className="form-group">
-                                        <label className="form-label">Edificio</label>
-                                        <select
-                                            className="form-select"
-                                            required
-                                            value={building}
-                                            onChange={(e) => setBuilding(e.target.value)}
-                                        >
-                                            <option value="" disabled>Selecciona tu edificio</option>
-                                            <option value="Torre Alvear">Torre Alvear</option>
-                                            <option value="Edificio Libertador">Edificio Libertador</option>
-                                            <option value="Complejo Center">Complejo Center</option>
-                                            <option value="Residencial del Parque">Residencial del Parque</option>
-                                        </select>
-                                    </div>
+                                    <Input
+                                        label="Número de WhatsApp"
+                                        type="tel"
+                                        placeholder="Ej. 3517585241"
+                                        value={contactValue}
+                                        onChange={(e) => setContactValue(e.target.value)}
+                                        required
+                                    />
                                 </div>
 
                                 <div className="grid-2-col">
-                                    <div className="form-group">
-                                        <label className="form-label">Departamento</label>
-                                        <select
-                                            className="form-select"
-                                            required
-                                            value={department}
-                                            onChange={(e) => setDepartment(e.target.value)}
-                                        >
-                                            <option value="" disabled>Selecciona tu departamento</option>
-                                            <option value="Depto 1A">Depto 1A</option>
-                                            <option value="Depto 1B">Depto 1B</option>
-                                            <option value="Depto 2A">Depto 2A</option>
-                                            <option value="Depto 2B">Depto 2B</option>
-                                            <option value="Depto 3A">Depto 3A</option>
-                                            <option value="Depto 404">Depto 404</option>
-                                            <option value="Planta Baja">Planta Baja / Áreas Comunes</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="contact-method-group">
-                                        <label className="form-label">Recibir novedades por:</label>
-                                        <div className="contact-toggle">
-                                            <button
-                                                type="button"
-                                                className={`contact-btn ${contactMethod === 'whatsapp' ? 'active' : ''}`}
-                                                onClick={() => setContactMethod('whatsapp')}
-                                            >
-                                                <MessageSquare size={16} /> WhatsApp
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={`contact-btn ${contactMethod === 'email' ? 'active' : ''}`}
-                                                onClick={() => setContactMethod('email')}
-                                            >
-                                                <Mail size={16} /> Correo
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <Input
+                                        label="Edificio"
+                                        placeholder="Ej. Torre Alvear"
+                                        value={building}
+                                        onChange={(e) => setBuilding(e.target.value)}
+                                        required
+                                    />
+                                    <Input
+                                        label="Piso / Departamento"
+                                        placeholder="Ej. Piso 4 Depto B"
+                                        value={department}
+                                        onChange={(e) => setDepartment(e.target.value)}
+                                        required
+                                    />
                                 </div>
 
                                 <Input
-                                    label={contactMethod === 'whatsapp' ? 'Número de WhatsApp' : 'Correo Electrónico'}
-                                    type={contactMethod === 'whatsapp' ? 'tel' : 'email'}
-                                    placeholder={contactMethod === 'whatsapp' ? 'Ej. +54 9 11 1234-5678' : 'Ej. juan@correo.com'}
-                                    value={contactValue}
-                                    onChange={(e) => setContactValue(e.target.value)}
+                                    label="Disponibilidad Horaria"
+                                    placeholder="Ej. Lunes a Viernes de 14 a 18hs"
+                                    value={availability}
+                                    onChange={(e) => setAvailability(e.target.value)}
                                     required
                                 />
                             </div>
@@ -232,7 +199,7 @@ const LandingPage: React.FC = () => {
                                             value={category}
                                             onChange={(e) => setCategory(e.target.value)}
                                         >
-                                            <option value="" disabled>¿Qué tipo de problema es?</option>
+                                            <option value="" disabled>Seleccionar categoría...</option>
                                             <option value="Plomería">Plomería / Agua</option>
                                             <option value="Electricidad">Electricidad / Luces</option>
                                             <option value="Limpieza">Limpieza</option>
@@ -251,27 +218,27 @@ const LandingPage: React.FC = () => {
                                             value={priority}
                                             onChange={(e) => setPriority(e.target.value as Priority)}
                                         >
-                                            <option value="baja">Baja (Puede esperar unos días)</option>
-                                            <option value="media">Media (Necesita atención pronto)</option>
-                                            <option value="alta">Urgente (Emergencia / Peligro)</option>
+                                            <option value="baja">Baja (Puede esperar)</option>
+                                            <option value="media">Media (Pronta atención)</option>
+                                            <option value="alta">Urgente (Emergencia)</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <Input
                                     label="Lugar específico del problema"
-                                    placeholder="Ej. Baño de visitas, pasillo principal"
+                                    placeholder="Ej. Baño de visitas, pasillo 2do piso"
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
                                     required
                                 />
 
                                 <div className="form-group">
-                                    <label className="form-label">Descripción detallada</label>
+                                    <label className="form-label">Descripción del problema</label>
                                     <textarea
                                         className="form-textarea minimal-textarea"
-                                        placeholder="Describe el problema en detalle, qué lo originó, desde cuándo está así..."
-                                        rows={4}
+                                        placeholder="Describe brevemente el inconveniente..."
+                                        rows={3}
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                         required

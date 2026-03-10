@@ -31,6 +31,7 @@ export interface WorkOrder {
     signatureUrl?: string;
     receptorName?: string;
     budgetStatus?: string;
+    availability?: string;
 }
 
 // Helper: show human-friendly order ID like ORD-100
@@ -120,6 +121,7 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
             signatureUrl: o.signature_url || undefined,
             receptorName: o.receptor_name || '',
             budgetStatus: o.budgets && o.budgets.length > 0 ? o.budgets[0].status : undefined,
+            availability: o.availability || '',
         }));
         setOrders(mappedOrders);
     };
@@ -161,7 +163,8 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
             contact_value: newOrderData.contactValue,
             priority: newOrderData.priority,
             images: newOrderData.images,
-            status: 'pending'
+            status: 'pending',
+            availability: newOrderData.availability
         });
 
         if (error) {

@@ -88,7 +88,7 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return mapped;
         } catch (error) {
             console.error('Error creating receipt:', error);
-            return null;
+            throw error;
         }
     };
 

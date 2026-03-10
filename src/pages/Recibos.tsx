@@ -55,7 +55,7 @@ const Recibos: React.FC = () => {
 
         setIsLoading(true);
         try {
-            const newReceipt = await addReceipt({
+            await addReceipt({
                 budgetId: linkedBudgetId || undefined,
                 clientName: clientName,
                 amountWritten: amountWritten,
@@ -64,18 +64,14 @@ const Recibos: React.FC = () => {
                 signatureUrl: 'AUTO_GENERATED' // Marker for PDF logic
             });
 
-            if (newReceipt) {
-                setShowSuccess(true);
-                setTimeout(() => {
-                    setIsModalOpen(false);
-                    resetForm();
-                }, 2000);
-            } else {
-                alert('No se pudo generar el recibo. Verifique la conexión o los datos.');
-            }
+            setShowSuccess(true);
+            setTimeout(() => {
+                setIsModalOpen(false);
+                resetForm();
+            }, 2000);
         } catch (error: any) {
             console.error('Error in handleSubmit:', error);
-            alert(`Error al procesar: ${error.message || 'Error desconocido'}`);
+            alert(`Error al generar recibo: ${error.message || 'Error desconocido'}. ¿Configuraste la tabla en Supabase?`);
         } finally {
             setIsLoading(false);
         }

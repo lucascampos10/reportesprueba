@@ -65,16 +65,14 @@ const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) 
     // Items table
     autoTable(doc, {
         startY: 75,
-        head: [['Descripción', 'Cant.', 'Precio Unit.', 'Subtotal']],
+        head: [['Descripción', 'Precio ($)']],
         body: budget.items.map(item => [
             item.description,
-            item.qty.toString(),
-            `$${item.unit_price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
-            `$${(item.qty * item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
+            `$${Number(item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
         ]),
         headStyles: { fillColor: [26, 60, 52], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [247, 247, 247] },
-        columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+        columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'right' } },
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 10;
@@ -105,7 +103,7 @@ const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) 
 };
 
 // ─── Helper ────────────────────────────────────────────────────────────────
-const emptyItem = (): BudgetItem => ({ description: '', qty: 1, unit_price: '' as any });
+const emptyItem = (): BudgetItem => ({ description: '', unit_price: '' as any });
 
 const Presupuestos: React.FC = () => {
     const { budgets, addBudget, updateBudget, updateBudgetStatus } = useBudgets();
@@ -123,7 +121,7 @@ const Presupuestos: React.FC = () => {
     const [notes, setNotes] = useState('');
     const [items, setItems] = useState<BudgetItem[]>([emptyItem()]);
 
-    const subtotal = items.reduce((sum, i) => sum + (Number(i.qty) || 0) * (Number(i.unit_price) || 0), 0);
+    const subtotal = items.reduce((sum, i) => sum + (Number(i.unit_price) || 0), 0);
     const tax = 0; // Removed IVA calculation
     const total = subtotal;
 
@@ -335,38 +333,27 @@ const Presupuestos: React.FC = () => {
                         <label className="form-label">Ítems del presupuesto *</label>
                         <div className="pres-items-table">
                             <div className="pres-items-header">
-                                <span style={{ flex: 3 }}>Descripción</span>
-                                <span style={{ flex: 1 }}>Cant.</span>
-                                <span style={{ flex: 1.5 }}>P. Unit. ($)</span>
-                                <span style={{ flex: 1.5, textAlign: 'right' }}>Subtotal</span>
+                                <span style={{ flex: 4 }}>Descripción</span>
+                                <span style={{ flex: 2, textAlign: 'right' }}>Precio ($)</span>
                                 <span style={{ width: '24px' }}></span>
                             </div>
                             {items.map((item, idx) => (
                                 <div key={idx} className="pres-item-row">
                                     <input
                                         className="form-input"
-                                        style={{ flex: 3 }}
+                                        style={{ flex: 4 }}
                                         placeholder="Descripción del servicio"
                                         value={item.description}
                                         onChange={e => updateItem(idx, 'description', e.target.value)}
                                     />
                                     <input
                                         className="form-input"
-                                        style={{ flex: 1 }}
-                                        type="number" min={1}
-                                        value={item.qty}
-                                        onChange={e => updateItem(idx, 'qty', Number(e.target.value))}
-                                    />
-                                    <input
-                                        className="form-input"
-                                        style={{ flex: 1.5 }}
+                                        style={{ flex: 2, textAlign: 'right' }}
                                         type="number" min={0} step={0.01}
-                                        value={item.unit_price}
+                                        placeholder="0.00"
+                                        value={item.unit_price === ('' as any) ? '' : item.unit_price}
                                         onChange={e => updateItem(idx, 'unit_price', Number(e.target.value))}
                                     />
-                                    <span style={{ flex: 1.5, textAlign: 'right', fontSize: '0.85rem', fontWeight: 600, alignSelf: 'center' }}>
-                                        ${((Number(item.qty) || 0) * (Number(item.unit_price) || 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                    </span>
                                     <button
                                         onClick={() => setItems(items.filter((_, i) => i !== idx))}
                                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', alignSelf: 'center', padding: '0.25rem' }}

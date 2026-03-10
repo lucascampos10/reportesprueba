@@ -34,12 +34,10 @@ export const generateBudgetPDF = (budget: any) => {
 
     autoTable(doc, {
         startY: 75,
-        head: [['Descripción', 'Cant.', 'Precio Unit.', 'Subtotal']],
+        head: [['Descripción', 'Precio ($)']],
         body: budget.items.map((item: any) => [
             item.description,
-            item.qty.toString(),
-            `$${item.unit_price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
-            `$${(item.qty * item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
+            `$${Number(item.unit_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
         ]),
         headStyles: { fillColor: [26, 60, 52], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [247, 247, 247] },

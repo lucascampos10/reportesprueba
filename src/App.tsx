@@ -88,7 +88,8 @@ const App: React.FC = () => {
                   <Route path="historial" element={<Navigate to="/admin/ordenes/historial" replace />} />
 
                   {/* Finanzas */}
-                  <Route path="finanzas" element={<Finanzas />} />
+                  <Route path="finanzas" element={<Navigate to="/admin/finanzas/general" replace />} />
+                  <Route path="finanzas/menu" element={<Finanzas />} />
                   <Route path="finanzas/general" element={<FinanceOverview />} />
                   <Route path="finanzas/presupuestos" element={<Presupuestos />} />
                   <Route path="finanzas/recibos" element={<Recibos />} />

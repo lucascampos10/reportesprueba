@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, FilePlus, Settings, LogOut, Menu, X,
     ClipboardList, ChevronDown, DollarSign, Calendar, Users,
-    FileText, Receipt, ListChecks, Clock
+    FileText, Receipt, ListChecks, Clock, TrendingUp
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './Sidebar.css';
@@ -39,6 +39,7 @@ const navGroups: NavGroup[] = [
         icon: <DollarSign size={20} />,
         basePath: '/admin/finanzas',
         items: [
+            { name: 'General', path: '/admin/finanzas/general', icon: <TrendingUp size={16} /> },
             { name: 'Presupuestos', path: '/admin/finanzas/presupuestos', icon: <FileText size={16} /> },
             { name: 'Recibos', path: '/admin/finanzas/recibos', icon: <Receipt size={16} /> },
         ],

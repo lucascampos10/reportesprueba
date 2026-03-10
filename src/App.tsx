@@ -10,9 +10,16 @@ import PendingOrders from './pages/PendingOrders';
 import AllOrders from './pages/AllOrders';
 import WorkerDashboard from './pages/WorkerDashboard';
 import WorkerHistory from './pages/WorkerHistory';
+import EdificioLayout from './layouts/EdificioLayout';
+import EdificioDashboard from './pages/EdificioDashboard';
 import LandingPage from './pages/LandingPage';
+import Finanzas from './pages/Finanzas';
+import Presupuestos from './pages/Presupuestos';
+import Recibos from './pages/Recibos';
+import { AgendaPage, ContactosPage } from './pages/ComingSoon';
 import { WorkOrderProvider } from './context/WorkOrderContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { BudgetProvider } from './context/BudgetContext';
 
 // Guard component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -33,7 +40,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   if (isAuthenticated === null) {
-    return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Cargando sistema...</div>;
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: '1rem',
+        background: 'var(--color-bg)'
+      }}>
+        <div style={{ width: 40, height: 40, border: '3px solid var(--color-primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Cargando sistema...</p>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -47,31 +63,54 @@ const App: React.FC = () => {
   return (
     <NotificationProvider>
       <WorkOrderProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Route */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<Login />} />
+        <BudgetProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Public Route */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-              <Route index element={<Dashboard />} />
-              <Route path="crear-orden" element={<CreateOrder />} />
-              <Route path="pendientes" element={<PendingOrders />} />
-              <Route path="historial" element={<AllOrders />} />
-              <Route path="ajustes" element={<div className="p-8"><h1>Ajustes de Sistema (Próximamente)</h1></div>} />
-            </Route>
+              {/* Admin Routes */}
+              <Route path="/admin" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                <Route index element={<Dashboard />} />
 
-            {/* Worker Routes */}
-            <Route path="/operario" element={<ProtectedRoute><WorkerLayout /></ProtectedRoute>}>
-              <Route index element={<WorkerDashboard />} />
-              <Route path="historial" element={<WorkerHistory />} />
-            </Route>
+                {/* Órdenes de Trabajo */}
+                <Route path="ordenes/nueva" element={<CreateOrder />} />
+                <Route path="ordenes/pendientes" element={<PendingOrders />} />
+                <Route path="ordenes/historial" element={<AllOrders />} />
 
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
+                {/* Legacy redirects for old URLs */}
+                <Route path="crear-orden" element={<Navigate to="/admin/ordenes/nueva" replace />} />
+                <Route path="pendientes" element={<Navigate to="/admin/ordenes/pendientes" replace />} />
+                <Route path="historial" element={<Navigate to="/admin/ordenes/historial" replace />} />
+
+                {/* Finanzas */}
+                <Route path="finanzas" element={<Finanzas />} />
+                <Route path="finanzas/presupuestos" element={<Presupuestos />} />
+                <Route path="finanzas/recibos" element={<Recibos />} />
+
+                {/* Coming Soon */}
+                <Route path="agenda" element={<AgendaPage />} />
+                <Route path="contactos" element={<ContactosPage />} />
+                <Route path="ajustes" element={<div className="p-8"><h1>Ajustes de Sistema (Próximamente)</h1></div>} />
+              </Route>
+
+              {/* Worker Routes */}
+              <Route path="/operario" element={<ProtectedRoute><WorkerLayout /></ProtectedRoute>}>
+                <Route index element={<WorkerDashboard />} />
+                <Route path="historial" element={<WorkerHistory />} />
+              </Route>
+
+              {/* Edificio Admin Routes */}
+              <Route path="/edificio" element={<ProtectedRoute><EdificioLayout /></ProtectedRoute>}>
+                <Route index element={<EdificioDashboard />} />
+              </Route>
+
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </BudgetProvider>
       </WorkOrderProvider>
     </NotificationProvider>
   );

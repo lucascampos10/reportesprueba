@@ -46,6 +46,8 @@ const Login: React.FC = () => {
                 } else {
                     if (profile.role === 'operario') {
                         navigate('/operario');
+                    } else if (profile.role === 'edificio_admin') {
+                        navigate('/edificio');
                     } else {
                         navigate('/admin');
                     }

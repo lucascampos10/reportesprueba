@@ -93,13 +93,114 @@
     transition: transform var(--transition-fast);
 }
 
-.nav-link:hover .nav-icon {
-    transform: scale(1.1);
+/* ─── Nav Group Header ──────────────────────────────────────────────────── */
+.nav-group-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-md);
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+    font-size: 0.9rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
 }
 
-.nav-link.active .nav-icon {
-    color: #E88B2D;
+.nav-group-header:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #FFFFFF;
+    transform: translateX(4px);
 }
+
+.nav-group-header.active {
+    color: #E88B2D;
+    font-weight: 600;
+}
+
+.nav-group-header .chevron {
+    margin-left: auto;
+    transition: transform 0.25s ease;
+}
+.nav-group-header .chevron.open {
+    transform: rotate(180deg);
+}
+
+/* ─── Sub-links ─────────────────────────────────────────────────────────── */
+.nav-sub-list {
+    list-style: none;
+    padding: 0.25rem 0 0.25rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0);    }
+}
+
+.nav-sub-link {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: var(--radius-md);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.nav-sub-link:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #FFFFFF;
+    transform: translateX(4px);
+}
+
+.nav-sub-link.active {
+    background-color: rgba(232, 139, 45, 0.15);
+    color: #E88B2D;
+    font-weight: 600;
+}
+
+.nav-sub-link.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #E88B2D;
+    border-radius: 0 3px 3px 0;
+}
+
+/* ─── "Próximamente" badge ──────────────────────────────────────────────── */
+.soon-badge {
+    margin-left: auto;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 0.15rem 0.45rem;
+    border-radius: 99px;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase;
+}
+
+.nav-link-soon {
+    opacity: 0.6;
+    pointer-events: auto !important;
+    cursor: default;
+}
+
+/* ─── Original nav-link (kept for single links) ─────────────────────────── */
 
 .sidebar-footer {
     padding: 1.5rem;

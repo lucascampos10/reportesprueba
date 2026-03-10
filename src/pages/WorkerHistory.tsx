@@ -164,6 +164,26 @@ const WorkerHistory: React.FC = () => {
                                 <p>{selectedOrder.resolutionNotes}</p>
                             </div>
                         )}
+
+                        {/* Signature block */}
+                        {(selectedOrder.signatureUrl || selectedOrder.receptorName) && (
+                            <div className="resolution-notes-box" style={{ background: 'var(--color-bg)' }}>
+                                <h4 style={{ color: 'var(--color-text)' }}><FileText size={16} /> Conformidad del Cliente</h4>
+                                {selectedOrder.receptorName && (
+                                    <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                                        <strong>Recibido / Aprobado por:</strong> {selectedOrder.receptorName}
+                                    </p>
+                                )}
+                                {selectedOrder.signatureUrl && (
+                                    <div style={{ marginTop: '0.75rem' }}>
+                                        <p style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>Firma:</p>
+                                        <div style={{ background: 'white', display: 'inline-block', padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+                                            <img src={selectedOrder.signatureUrl} alt="Firma de conformidad" style={{ maxHeight: '120px' }} />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>

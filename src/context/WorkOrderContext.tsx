@@ -28,6 +28,9 @@ export interface WorkOrder {
     resolvedImages?: string[];
     resolvedDate?: string;
     resolutionNotes?: string;
+    signatureUrl?: string;
+    receptorName?: string;
+    budgetStatus?: string;
 }
 
 // Helper: show human-friendly order ID like ORD-100
@@ -38,7 +41,7 @@ interface WorkOrderContextType {
     addOrder: (order: Omit<WorkOrder, 'id' | 'status' | 'date' | 'orderNumber'>) => Promise<void>;
     updateOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
     assignWorker: (orderId: string, workerId: string) => Promise<void>;
-    closeOrder: (orderId: string, resolvedImages: string[], resolutionNotes: string) => Promise<void>;
+    closeOrder: (orderId: string, resolvedImages: string[], resolutionNotes: string, signatureUrl?: string, receptorName?: string) => Promise<void>;
     fetchOrders: () => Promise<void>;
 }
 
@@ -57,7 +60,8 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
             .from('work_orders')
             .select(`
                 *,
-                assigned_profile:profiles!assigned_to(full_name)
+                assigned_profile:profiles!assigned_to(full_name),
+                budgets(status)
             `)
             // The exclamation explicitly uses the foreign key relation
             .order('created_at', { ascending: false });
@@ -99,7 +103,10 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
             assignedToId: o.assigned_to,
             resolvedImages: o.resolution_images || [],
             resolvedDate: o.resolved_at ? new Date(o.resolved_at).toLocaleString() : undefined,
-            resolutionNotes: o.resolution_notes || undefined
+            resolutionNotes: o.resolution_notes || '',
+            signatureUrl: o.signature_url || undefined,
+            receptorName: o.receptor_name || '',
+            budgetStatus: o.budgets && o.budgets.length > 0 ? o.budgets[0].status : undefined,
         }));
         setOrders(mappedOrders);
     };
@@ -190,12 +197,14 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
         fetchOrders();
     };
 
-    const closeOrder = async (orderId: string, resolvedImages: string[], resolutionNotes: string) => {
+    const closeOrder = async (orderId: string, resolvedImages: string[], resolutionNotes: string, signatureUrl?: string, receptorName?: string) => {
         const { error } = await supabase.from('work_orders').update({
             status: 'resolved',
             resolution_images: resolvedImages,
             resolution_notes: resolutionNotes,
-            resolved_at: new Date().toISOString()
+            resolved_at: new Date().toISOString(),
+            signature_url: signatureUrl || null,
+            receptor_name: receptorName || null,
         }).eq('id', orderId);
 
         if (error) {

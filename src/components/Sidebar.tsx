@@ -1,25 +1,94 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, Settings, LogOut, Menu, X, Building2, ClipboardList } from 'lucide-react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import {
+    LayoutDashboard, FilePlus, Settings, LogOut, Menu, X,
+    ClipboardList, ChevronDown, DollarSign, Calendar, Users,
+    FileText, Receipt, ListChecks, Clock
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import './Sidebar.css';
+
+interface NavGroup {
+    label: string;
+    icon: React.ReactNode;
+    basePath: string;
+    soon?: boolean;
+    items?: { name: string; path: string; icon: React.ReactNode }[];
+    singlePath?: string;
+}
+
+const navGroups: NavGroup[] = [
+    {
+        label: 'Dashboard',
+        icon: <LayoutDashboard size={20} />,
+        basePath: '/admin',
+        singlePath: '/admin',
+    },
+    {
+        label: 'Órdenes de Trabajo',
+        icon: <ClipboardList size={20} />,
+        basePath: '/admin/ordenes',
+        items: [
+            { name: 'Nueva Orden', path: '/admin/ordenes/nueva', icon: <FilePlus size={16} /> },
+            { name: 'Órdenes Pendientes', path: '/admin/ordenes/pendientes', icon: <Clock size={16} /> },
+            { name: 'Historial', path: '/admin/ordenes/historial', icon: <ListChecks size={16} /> },
+        ],
+    },
+    {
+        label: 'Finanzas',
+        icon: <DollarSign size={20} />,
+        basePath: '/admin/finanzas',
+        items: [
+            { name: 'Presupuestos', path: '/admin/finanzas/presupuestos', icon: <FileText size={16} /> },
+            { name: 'Recibos', path: '/admin/finanzas/recibos', icon: <Receipt size={16} /> },
+        ],
+    },
+    {
+        label: 'Agenda',
+        icon: <Calendar size={20} />,
+        basePath: '/admin/agenda',
+        singlePath: '/admin/agenda',
+        soon: true,
+    },
+    {
+        label: 'Contactos',
+        icon: <Users size={20} />,
+        basePath: '/admin/contactos',
+        singlePath: '/admin/contactos',
+        soon: true,
+    },
+    {
+        label: 'Ajustes',
+        icon: <Settings size={20} />,
+        basePath: '/admin/ajustes',
+        singlePath: '/admin/ajustes',
+        soon: true,
+    },
+];
 
 const Sidebar: React.FC = () => {
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [openGroups, setOpenGroups] = useState<string[]>(['Órdenes de Trabajo', 'Finanzas']);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const toggleSidebar = () => setIsMobileOpen(!isMobileOpen);
 
-    const handleLogout = () => {
+    const toggleGroup = (label: string) => {
+        setOpenGroups(prev =>
+            prev.includes(label) ? prev.filter(g => g !== label) : [...prev, label]
+        );
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
         navigate('/');
     };
 
-    const navItems = [
-        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={20} /> },
-        { name: 'Nueva Orden', path: '/admin/crear-orden', icon: <FilePlus size={20} /> },
-        { name: 'Órdenes Pendientes', path: '/admin/pendientes', icon: <Building2 size={20} /> },
-        { name: 'Historial de Órdenes', path: '/admin/historial', icon: <ClipboardList size={20} /> },
-        { name: 'Ajustes', path: '/admin/ajustes', icon: <Settings size={20} /> },
-    ];
+    const isGroupActive = (group: NavGroup) => {
+        if (group.singlePath) return location.pathname === group.singlePath;
+        return location.pathname.startsWith(group.basePath);
+    };
 
     return (
         <>
@@ -38,19 +107,61 @@ const Sidebar: React.FC = () => {
 
                 <nav className="sidebar-nav">
                     <ul className="nav-list">
-                        {navItems.map((item) => (
-                            <li key={item.path} className="nav-item">
-                                <NavLink
-                                    to={item.path}
-                                    end={item.path === '/admin'}
-                                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                                    onClick={() => setIsMobileOpen(false)}
-                                >
-                                    <span className="nav-icon">{item.icon}</span>
-                                    <span className="nav-text">{item.name}</span>
-                                </NavLink>
-                            </li>
-                        ))}
+                        {navGroups.map((group) => {
+                            const active = isGroupActive(group);
+
+                            // Single link (no sub-items)
+                            if (group.singlePath) {
+                                return (
+                                    <li key={group.label} className="nav-item">
+                                        <NavLink
+                                            to={group.singlePath}
+                                            end={group.singlePath === '/admin'}
+                                            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''} ${group.soon ? 'nav-link-soon' : ''}`}
+                                            onClick={() => setIsMobileOpen(false)}
+                                        >
+                                            <span className="nav-icon">{group.icon}</span>
+                                            <span className="nav-text">{group.label}</span>
+                                            {group.soon && <span className="soon-badge">Próx.</span>}
+                                        </NavLink>
+                                    </li>
+                                );
+                            }
+
+                            // Group with sub-items
+                            const isOpen = openGroups.includes(group.label);
+                            return (
+                                <li key={group.label} className="nav-item nav-group">
+                                    <button
+                                        className={`nav-group-header ${active ? 'active' : ''}`}
+                                        onClick={() => toggleGroup(group.label)}
+                                    >
+                                        <span className="nav-icon">{group.icon}</span>
+                                        <span className="nav-text">{group.label}</span>
+                                        <ChevronDown
+                                            size={16}
+                                            className={`chevron ${isOpen ? 'open' : ''}`}
+                                        />
+                                    </button>
+                                    {isOpen && (
+                                        <ul className="nav-sub-list">
+                                            {group.items!.map(item => (
+                                                <li key={item.path}>
+                                                    <NavLink
+                                                        to={item.path}
+                                                        className={({ isActive }) => `nav-sub-link ${isActive ? 'active' : ''}`}
+                                                        onClick={() => setIsMobileOpen(false)}
+                                                    >
+                                                        <span className="nav-icon">{item.icon}</span>
+                                                        <span>{item.name}</span>
+                                                    </NavLink>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ul>
                 </nav>
 

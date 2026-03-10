@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '../components/Card';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
@@ -10,6 +10,7 @@ import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
 import { uploadImage } from '../lib/storage';
 import { supabase } from '../lib/supabase';
+import SignatureCanvas from 'react-signature-canvas';
 import './WorkerDashboard.css';
 
 const PAGE_SIZE = 20;
@@ -29,6 +30,8 @@ const WorkerDashboard: React.FC = () => {
     const [closeImages, setCloseImages] = useState<string[]>([]);      // preview URLs
     const [closeImageFiles, setCloseImageFiles] = useState<File[]>([]);
     const [closeNotes, setCloseNotes] = useState('');
+    const [receptorName, setReceptorName] = useState('');
+    const signaturePadRef = useRef<SignatureCanvas>(null);
 
     // Toast Notification State
     const [toastMessage, setToastMessage] = useState<{ title: string, type: 'success' | 'error' } | null>(null);
@@ -99,6 +102,8 @@ const WorkerDashboard: React.FC = () => {
         setCloseImages([]);
         setCloseImageFiles([]);
         setCloseNotes('');
+        setReceptorName('');
+        if (signaturePadRef.current) signaturePadRef.current.clear();
         setIsDetailOpen(false);
         setTimeout(() => setIsCloseModalOpen(true), 100);
     };
@@ -122,14 +127,39 @@ const WorkerDashboard: React.FC = () => {
             showToast('Agrega una breve descripción', 'error');
             return;
         }
+        if (!receptorName.trim()) {
+            showToast('Ingresá el nombre de quien recibe el trabajo', 'error');
+            return;
+        }
+        if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) {
+            showToast('Es necesaria la firma de conformidad', 'error');
+            return;
+        }
 
         try {
+            // 1. Upload signature
+            const signatureBlob = await new Promise<Blob | null>((resolve) => {
+                const canvas = signaturePadRef.current?.getTrimmedCanvas();
+                if (!canvas) { resolve(null); return; }
+                canvas.toBlob((blob) => resolve(blob), 'image/png');
+            });
+
+            let signatureUrl = '';
+            if (signatureBlob) {
+                const signatureFile = new File([signatureBlob], `firma_${Date.now()}.png`, { type: 'image/png' });
+                signatureUrl = await uploadImage(signatureFile, 'firmas');
+            }
+
+            // 2. Upload images
             const uploadedUrls: string[] = [];
             for (const file of closeImageFiles) {
                 const url = await uploadImage(file, 'resoluciones');
                 uploadedUrls.push(url);
             }
-            await closeOrder(closeOrderTarget.id, uploadedUrls, closeNotes);
+
+            // 3. Close the order with all data
+            await closeOrder(closeOrderTarget.id, uploadedUrls, closeNotes, signatureUrl, receptorName);
+
             setIsCloseModalOpen(false);
             setCloseOrderTarget(null);
             showToast('Tarea finalizada y enviada', 'success');
@@ -470,6 +500,38 @@ const WorkerDashboard: React.FC = () => {
                             value={closeNotes}
                             onChange={(e) => setCloseNotes(e.target.value)}
                         ></textarea>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '1rem' }}>
+                        <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--color-primary)' }}>Conformidad del Cliente</h4>
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                            <label className="form-label">Nombre de quien aprueba el trabajo (Obligatorio)</label>
+                            <input
+                                className="form-input"
+                                placeholder="Ej: Juan Pérez / Administrador"
+                                value={receptorName}
+                                onChange={(e) => setReceptorName(e.target.value)}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span>Firma digital (Obligatorio)</span>
+                                <button
+                                    type="button"
+                                    onClick={() => signaturePadRef.current?.clear()}
+                                    style={{ background: 'none', border: 'none', color: 'var(--color-danger)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    Limpiar Firma
+                                </button>
+                            </label>
+                            <div style={{ border: '2px dashed var(--color-border)', borderRadius: 'var(--radius-lg)', background: 'var(--color-bg)', overflow: 'hidden' }}>
+                                <SignatureCanvas
+                                    ref={signaturePadRef}
+                                    penColor="black"
+                                    canvasProps={{ width: 450, height: 180, className: 'signature-canvas', style: { width: '100%' } }}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </Modal>

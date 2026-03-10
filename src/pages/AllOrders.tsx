@@ -246,6 +246,11 @@ const AllOrders: React.FC = () => {
                                         <span className={`status-badge badge-${order.status === 'pending' ? 'warning' : order.status === 'in_progress' ? 'info' : 'success'}`}>
                                             {getStatusLabel(order.status)}
                                         </span>
+                                        {order.budgetStatus && order.budgetStatus !== 'aprobado' && (
+                                            <span className={`status-badge badge-${order.budgetStatus === 'borrador' ? 'warning' : order.budgetStatus === 'enviado' ? 'info' : 'danger'}`}>
+                                                {order.budgetStatus === 'borrador' ? 'Pendiente de Envío' : `Presupuesto ${order.budgetStatus.charAt(0).toUpperCase() + order.budgetStatus.slice(1)}`}
+                                            </span>
+                                        )}
                                         {order.status !== 'resolved' && (
                                             <Button
                                                 size="sm"
@@ -340,6 +345,15 @@ const AllOrders: React.FC = () => {
                             </div>
                         </div>
 
+                        {selectedOrder.budgetStatus && (
+                            <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Estado del Presupuesto:</span>
+                                <span className={`status-badge badge-${selectedOrder.budgetStatus === 'borrador' ? 'warning' : selectedOrder.budgetStatus === 'enviado' ? 'info' : selectedOrder.budgetStatus === 'aprobado' ? 'success' : 'danger'}`}>
+                                    {selectedOrder.budgetStatus === 'borrador' ? 'Pendiente de Envío' : selectedOrder.budgetStatus.charAt(0).toUpperCase() + selectedOrder.budgetStatus.slice(1)}
+                                </span>
+                            </div>
+                        )}
+
                         <div style={{ padding: '0.75rem', background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
                             <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <FileText size={16} /> Descripción
@@ -387,6 +401,26 @@ const AllOrders: React.FC = () => {
                             <div className="resolution-notes-box">
                                 <h4><CheckCircle2 size={16} /> Notas de Resolución</h4>
                                 <p>{selectedOrder.resolutionNotes}</p>
+                            </div>
+                        )}
+
+                        {/* Signature block */}
+                        {selectedOrder.status === 'resolved' && (selectedOrder.signatureUrl || selectedOrder.receptorName) && (
+                            <div className="resolution-notes-box" style={{ background: 'var(--color-bg)' }}>
+                                <h4 style={{ color: 'var(--color-text)' }}><FileText size={16} /> Conformidad del Cliente</h4>
+                                {selectedOrder.receptorName && (
+                                    <p style={{ marginTop: '0.5rem', fontSize: '0.9rem' }}>
+                                        <strong>Recibido / Aprobado por:</strong> {selectedOrder.receptorName}
+                                    </p>
+                                )}
+                                {selectedOrder.signatureUrl && (
+                                    <div style={{ marginTop: '0.75rem' }}>
+                                        <p style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>Firma:</p>
+                                        <div style={{ background: 'white', display: 'inline-block', padding: '0.5rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+                                            <img src={selectedOrder.signatureUrl} alt="Firma de conformidad" style={{ maxHeight: '120px' }} />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 

@@ -1,0 +1,120 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
+
+export type BudgetStatus = 'borrador' | 'enviado' | 'aprobado' | 'rechazado';
+
+export interface BudgetItem {
+    description: string;
+    qty: number;
+    unit_price: number;
+}
+
+export interface Budget {
+    id: string;
+    orderId?: string;
+    budgetNumber: number;
+    building: string;
+    clientName: string;
+    items: BudgetItem[];
+    subtotal: number;
+    tax: number;
+    total: number;
+    status: BudgetStatus;
+    validUntil: string;
+    notes: string;
+    createdAt: string;
+}
+
+interface BudgetContextType {
+    budgets: Budget[];
+    addBudget: (b: Omit<Budget, 'id' | 'budgetNumber' | 'createdAt'>) => Promise<void>;
+    updateBudgetStatus: (id: string, status: BudgetStatus) => Promise<void>;
+    fetchBudgets: () => Promise<void>;
+}
+
+const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
+
+export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [budgets, setBudgets] = useState<Budget[]>([]);
+
+    const fetchBudgets = async () => {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) return;
+
+        const { data, error } = await supabase
+            .from('budgets')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) { console.error('Error fetching budgets:', error); return; }
+
+        if (data) {
+            setBudgets(data.map((b: any) => ({
+                id: b.id,
+                orderId: b.order_id,
+                budgetNumber: b.budget_number,
+                building: b.building || '',
+                clientName: b.client_name || '',
+                items: b.items || [],
+                subtotal: b.subtotal || 0,
+                tax: b.tax || 0,
+                total: b.total || 0,
+                status: b.status as BudgetStatus,
+                validUntil: b.valid_until || '',
+                notes: b.notes || '',
+                createdAt: b.created_at,
+            })));
+        }
+    };
+
+    useEffect(() => {
+        fetchBudgets();
+
+        const channel = supabase
+            .channel('budgets_realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets' }, () => {
+                fetchBudgets();
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, []);
+
+    const addBudget = async (b: Omit<Budget, 'id' | 'budgetNumber' | 'createdAt'>) => {
+        const { error } = await supabase.from('budgets').insert({
+            order_id: b.orderId || null,
+            building: b.building,
+            client_name: b.clientName,
+            items: b.items,
+            subtotal: b.subtotal,
+            tax: b.tax,
+            total: b.total,
+            status: b.status,
+            valid_until: b.validUntil || null,
+            notes: b.notes,
+        });
+        if (error) { console.error('Error adding budget:', error); throw error; }
+        fetchBudgets();
+    };
+
+    const updateBudgetStatus = async (id: string, status: BudgetStatus) => {
+        const { error } = await supabase.from('budgets').update({ status }).eq('id', id);
+        if (error) { console.error('Error updating budget status:', error); throw error; }
+        fetchBudgets();
+    };
+
+    return (
+        <BudgetContext.Provider value={{ budgets, addBudget, updateBudgetStatus, fetchBudgets }}>
+            {children}
+        </BudgetContext.Provider>
+    );
+};
+
+export const useBudgets = () => {
+    const ctx = useContext(BudgetContext);
+    if (!ctx) throw new Error('useBudgets must be used within BudgetProvider');
+    return ctx;
+};
+
+export const formatBudgetId = (n: number) => `PRES-${String(n).padStart(3, '0')}`;

@@ -1,0 +1,257 @@
+.presupuestos-container {
+    padding: 0 0.5rem;
+}
+
+/* ─── Filter chips ────────────────────────────────────────────────────────── */
+.pres-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.pres-chip {
+    padding: 0.4rem 1rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1.5px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pres-chip.active,
+.pres-chip:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: rgba(232, 139, 45, 0.08);
+}
+
+.pres-chip.active.chip-aprobado {
+    border-color: #10B981;
+    color: #10B981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.pres-chip.active.chip-rechazado {
+    border-color: #EF4444;
+    color: #EF4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.pres-chip.active.chip-enviado {
+    border-color: #3B82F6;
+    color: #3B82F6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.pres-chip.active.chip-borrador {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: rgba(232, 139, 45, 0.1);
+}
+
+/* ─── Budget cards ────────────────────────────────────────────────────────── */
+.pres-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.pres-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pres-card:hover {
+    border-color: rgba(232, 139, 45, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.pres-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.pres-number {
+    font-size: 0.85rem;
+    font-weight: 800;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+}
+
+.pres-total {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.pres-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.pres-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pres-action-btn:hover {
+    background: var(--color-bg);
+    border-color: var(--color-text-muted);
+}
+
+.pres-action-btn.blue {
+    border-color: #3B82F6;
+    color: #3B82F6;
+}
+
+.pres-action-btn.blue:hover {
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.pres-action-btn.green {
+    border-color: #10B981;
+    color: #10B981;
+}
+
+.pres-action-btn.green:hover {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+.pres-action-btn.red {
+    border-color: #EF4444;
+    color: #EF4444;
+}
+
+.pres-action-btn.red:hover {
+    background: rgba(239, 68, 68, 0.08);
+}
+
+/* ─── Form ────────────────────────────────────────────────────────────────── */
+.pres-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.form-group-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 500px) {
+    .form-group-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.pres-items-table {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.pres-items-header {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.pres-item-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.pres-item-row:last-of-type {
+    border-bottom: none;
+}
+
+.pres-item-row .form-input {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.pres-add-item-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: none;
+    border-top: 1px dashed var(--color-border);
+    background: transparent;
+    color: var(--color-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.pres-add-item-btn:hover {
+    background: rgba(232, 139, 45, 0.06);
+}
+
+/* ─── Totals ─────────────────────────────────────────────────────────────── */
+.pres-totals {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-self: flex-end;
+    min-width: 240px;
+}
+
+.pres-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.pres-total-row.total {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-text);
+    border-top: 1px solid var(--color-border);
+    padding-top: 0.4rem;
+    margin-top: 0.2rem;
+}

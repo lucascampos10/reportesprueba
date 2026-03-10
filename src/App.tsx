@@ -109,6 +109,8 @@ const App: React.FC = () => {
                 {/* Edificio Admin Routes */}
                 <Route path="/edificio" element={<ProtectedRoute><EdificioLayout /></ProtectedRoute>}>
                   <Route index element={<EdificioDashboard />} />
+                  <Route path="presupuestos" element={<EdificioDashboard />} /> {/* For now reuse dashboard or specific list */}
+                  <Route path="reportes" element={<EdificioDashboard />} />    {/* For now reuse dashboard or specific list */}
                 </Route>
 
                 {/* Fallback */}

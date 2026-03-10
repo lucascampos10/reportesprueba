@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, Navigate, useNavigate } from 'react-router-dom';
-import { Building2, LogOut } from 'lucide-react';
+import { Building2, LogOut, FileText, ClipboardList } from 'lucide-react';
+import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import './MainLayout.css';
 
@@ -36,10 +36,33 @@ const EdificioLayout: React.FC = () => {
                 <nav className="sidebar-nav">
                     <ul className="nav-list">
                         <li className="nav-item">
-                            <div className="nav-link active" style={{ cursor: 'default' }}>
+                            <NavLink
+                                to="/edificio"
+                                end
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                                onClick={() => { }}
+                            >
                                 <span className="nav-icon"><Building2 size={20} /></span>
-                                <span className="nav-text">Aprobaciones</span>
-                            </div>
+                                <span className="nav-text">Dashboard</span>
+                            </NavLink>
+                        </li>
+                        <li className="nav-item">
+                            <NavLink
+                                to="/edificio/presupuestos"
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                            >
+                                <span className="nav-icon"><FileText size={20} /></span>
+                                <span className="nav-text">Presupuestos</span>
+                            </NavLink>
+                        </li>
+                        <li className="nav-item">
+                            <NavLink
+                                to="/edificio/reportes"
+                                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                            >
+                                <span className="nav-icon"><ClipboardList size={20} /></span>
+                                <span className="nav-text">Reportes Vecinos</span>
+                            </NavLink>
                         </li>
                     </ul>
                 </nav>

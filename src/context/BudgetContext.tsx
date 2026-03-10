@@ -40,12 +40,26 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [budgets, setBudgets] = useState<Budget[]>([]);
 
     const fetchBudgets = async () => {
-        const { data: session } = await supabase.auth.getSession();
-        if (!session.session) return;
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) return;
 
-        const { data, error } = await supabase
+        // 1. Fetch user role and managed buildings
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, managed_buildings')
+            .eq('id', sessionData.session.user.id)
+            .single();
+
+        let query = supabase
             .from('budgets')
-            .select('*')
+            .select('*');
+
+        // 2. Filter if it's a building admin
+        if (profile?.role === 'edificio_admin' && profile.managed_buildings?.length > 0) {
+            query = query.in('building', profile.managed_buildings);
+        }
+
+        const { data, error } = await query
             .order('created_at', { ascending: false });
 
         if (error) { console.error('Error fetching budgets:', error); return; }

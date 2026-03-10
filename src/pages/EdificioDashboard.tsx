@@ -1,23 +1,30 @@
-import React from 'react';
-import { CheckCircle2, XCircle, FileText, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+    CheckCircle2,
+    FileText,
+    Download,
+    ClipboardList,
+    Clock,
+    ArrowRight
+} from 'lucide-react';
 import { useBudgets, formatBudgetId } from '../context/BudgetContext';
+import { useWorkOrders } from '../context/WorkOrderContext';
+import { Card, CardContent } from '../components/Card';
+import { Button } from '../components/Button';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { logoBase64 } from '../assets/logoBase64';
-import '../pages/Presupuestos.css'; // Reutilizamos estilos de tarjetas
+import './FinanceOverview.css'; // Reutilizamos estética premium
 
+// Reuse budget PDF generation logic
 export const generateBudgetPDF = (budget: any) => {
     const doc = new jsPDF();
-    // ─── Header background ────────────────────────────────────────────
     doc.setFillColor(26, 60, 52);
     doc.rect(0, 0, 210, 42, 'F');
 
-    // ─── LEFT: Logo + Company info ──────────────────────────────────
     try {
         doc.addImage(logoBase64, 'PNG', 15, 10, 22, 22);
-    } catch (e) {
-        // Continue if image fails
-    }
+    } catch (e) { }
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
@@ -30,7 +37,6 @@ export const generateBudgetPDF = (budget: any) => {
     doc.text('Tel: 3517585241', 42, 27);
     doc.text('novak.limpieza@gmail.com', 42, 32);
 
-    // ─── RIGHT: Budget title + details ───────────────────────────────
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.text('PRESUPUESTO', 195, 14, { align: 'right' });
@@ -39,11 +45,7 @@ export const generateBudgetPDF = (budget: any) => {
     doc.setFont('helvetica', 'normal');
     doc.text(`N°: ${formatBudgetId(budget.budgetNumber)}`, 195, 22, { align: 'right' });
     doc.text(`Fecha: ${new Date(budget.createdAt).toLocaleDateString('es-AR')}`, 195, 28, { align: 'right' });
-    if (budget.validUntil) {
-        doc.text(`Vencimiento: ${new Date(budget.validUntil).toLocaleDateString('es-AR')}`, 195, 34, { align: 'right' });
-    }
 
-    // ─── Client info block ─────────────────────────────────────────
     doc.setTextColor(30, 30, 30);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
@@ -62,102 +64,143 @@ export const generateBudgetPDF = (budget: any) => {
             `$${(Number(item.qty) * Number(item.unit_price)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
         ]),
         headStyles: { fillColor: [26, 60, 52], textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [247, 247, 247] },
-        columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
     });
-
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Subtotal:`, 140, finalY);
-    doc.text(`$${budget.subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text(`TOTAL:`, 140, finalY + 8);
-    doc.text(`$${budget.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY + 8, { align: 'right' });
 
     doc.save(`${formatBudgetId(budget.budgetNumber)}_${budget.building}.pdf`);
 };
 
 const EdificioDashboard: React.FC = () => {
     const { budgets, updateBudgetStatus } = useBudgets();
+    const { orders } = useWorkOrders();
+    const [activeTab] = useState<'overview' | 'reports' | 'budgets'>('overview');
 
-    // El admin de edificio solo ve los presupuestos enviados, aprobados o rechazados
-    const visibleBudgets = budgets.filter(b => b.status !== 'borrador');
-    const pendingCount = visibleBudgets.filter(b => b.status === 'enviado').length;
+    // Filter relevant data
+    const pendingBudgets = budgets.filter(b => b.status === 'enviado');
+    const activeOrders = orders.filter(o => o.status !== 'resolved');
+    const recentOrders = orders.slice(0, 5);
 
     return (
-        <div style={{ padding: '2rem' }} className="animate-fade-in">
-            <div className="dashboard-header mb-6">
+        <div className="finance-overview animate-fade-in" style={{ padding: '2rem' }}>
+            <div className="dashboard-header mb-8">
                 <div>
-                    <h1 className="page-title">Bienvenido</h1>
-                    <p className="page-subtitle">Revisá y aprobá los presupuestos de tus edificios.</p>
+                    <h1 className="page-title">Panel de Administración</h1>
+                    <p className="page-subtitle">Gestioná los reportes de tus vecinos y aprobá presupuestos de mantenimiento.</p>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-                <div style={{ padding: '1.5rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', flex: 1 }}>
-                    <h3 style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Presupuestos Pendientes</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 800, color: pendingCount > 0 ? '#E88B2D' : 'var(--color-text)' }}>{pendingCount}</p>
-                </div>
-                <div style={{ padding: '1.5rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', flex: 1 }}>
-                    <h3 style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Aprobados</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 800, color: '#10B981' }}>{visibleBudgets.filter(b => b.status === 'aprobado').length}</p>
-                </div>
-            </div>
-
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1rem' }}>Presupuestos Recientes</h2>
-
-            {visibleBudgets.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '35vh', gap: '1rem', textAlign: 'center' }}>
-                    <div style={{ padding: '1.5rem', borderRadius: '50%', background: 'rgba(59,130,246,0.1)', color: '#3B82F6' }}>
-                        <FileText size={48} />
-                    </div>
-                    <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>No hay presupuestos</h2>
-                    <p style={{ color: 'var(--color-text-muted)' }}>Por ahora no tenés presupuestos para revisar.</p>
-                </div>
-            ) : (
-                <div className="pres-list">
-                    {visibleBudgets.map(b => (
-                        <div key={b.id} className="pres-card" style={{ borderLeft: b.status === 'enviado' ? '4px solid #F59E0B' : b.status === 'aprobado' ? '4px solid #10B981' : '4px solid #EF4444' }}>
-                            <div className="pres-card-top">
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                                        <span className="pres-number">{formatBudgetId(b.budgetNumber)}</span>
-                                        <span className={`status-badge badge-${b.status === 'enviado' ? 'info' : b.status === 'aprobado' ? 'success' : 'danger'}`}>
-                                            {b.status === 'enviado' ? 'Pendiente de Aprobación' : b.status.charAt(0).toUpperCase() + b.status.slice(1)}
-                                        </span>
-                                    </div>
-                                    <p style={{ marginTop: '0.3rem', fontWeight: 600 }}>{b.building}</p>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                                        Fecha: {new Date(b.createdAt).toLocaleDateString('es-AR')} · {b.items.length} ítem{b.items.length !== 1 ? 's' : ''}
-                                    </p>
-                                </div>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div className="pres-total">${b.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Total sin IVA</div>
-                                </div>
-                            </div>
-
-                            <div className="pres-card-actions" style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
-                                <button className="pres-action-btn" onClick={() => generateBudgetPDF(b)}>
-                                    <Download size={15} /> Ver Detalles (PDF)
-                                </button>
-
-                                {b.status === 'enviado' && (
-                                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                                        <button className="pres-action-btn green" onClick={() => { if (confirm('¿Confirmar aprobación de presupuesto?')) updateBudgetStatus(b.id, 'aprobado') }}>
-                                            <CheckCircle2 size={15} /> Aprobar Presupuesto
-                                        </button>
-                                        <button className="pres-action-btn red" onClick={() => { if (confirm('¿Desea rechazar este presupuesto?')) updateBudgetStatus(b.id, 'rechazado') }}>
-                                            <XCircle size={15} /> Rechazar
-                                        </button>
-                                    </div>
-                                )}
+            {/* KPI Cards */}
+            <div className="kpi-grid mb-8">
+                <Card className="kpi-card glass-card">
+                    <CardContent>
+                        <div className="kpi-icon-row">
+                            <div className="kpi-icon bg-warning-light text-warning">
+                                <Clock size={24} />
                             </div>
                         </div>
-                    ))}
+                        <div className="kpi-info">
+                            <p className="kpi-label">Presupuestos por Aprobar</p>
+                            <h3 className="kpi-value">{pendingBudgets.length}</h3>
+                            <p className="kpi-subtext">Requieren tu revisión</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="kpi-card glass-card">
+                    <CardContent>
+                        <div className="kpi-icon-row">
+                            <div className="kpi-icon bg-info-light text-info">
+                                <ClipboardList size={24} />
+                            </div>
+                        </div>
+                        <div className="kpi-info">
+                            <p className="kpi-label">Reportes Activos</p>
+                            <h3 className="kpi-value">{activeOrders.length}</h3>
+                            <p className="kpi-subtext">Problemas reportados por vecinos</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="kpi-card glass-card">
+                    <CardContent>
+                        <div className="kpi-icon-row">
+                            <div className="kpi-icon bg-success-light text-success">
+                                <CheckCircle2 size={24} />
+                            </div>
+                        </div>
+                        <div className="kpi-info">
+                            <p className="kpi-label">Trabajos Finalizados</p>
+                            <h3 className="kpi-value">{orders.filter(o => o.status === 'resolved').length}</h3>
+                            <p className="kpi-subtext">Mes actual</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <div className="stats-layout">
+                {/* Pending Actions List */}
+                <div className="actions-section">
+                    <div className="section-header">
+                        <h2>Reportes de Vecinos (Recientes)</h2>
+                        <Button variant="outline" size="sm" rightIcon={<ArrowRight size={14} />}>Ver todos</Button>
+                    </div>
+                    <div className="action-list">
+                        {recentOrders.length > 0 ? (
+                            recentOrders.map(order => (
+                                <div key={order.id} className="action-item">
+                                    <div className={`action-indicator ${order.priority === 'alta' ? 'danger' : 'warning'}`}></div>
+                                    <div className="action-details">
+                                        <p className="action-title">{order.title}</p>
+                                        <p className="action-meta">{order.building} · {order.reporterName}</p>
+                                    </div>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, padding: '0.2rem 0.5rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}>
+                                        {order.status === 'pending' ? 'Pendiente' : order.status === 'in_progress' ? 'En Curso' : 'Resuelto'}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-state">
+                                <CheckCircle2 size={32} className="text-success" />
+                                <p>No hay reportes activos.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            )}
+
+                {/* Approvals in progress */}
+                <div className="actions-section">
+                    <div className="section-header">
+                        <h2>Presupuestos por Aprobar</h2>
+                        <Button variant="outline" size="sm" rightIcon={<ArrowRight size={14} />}>Ver todos</Button>
+                    </div>
+                    <div className="action-list">
+                        {pendingBudgets.length > 0 ? (
+                            pendingBudgets.map(budget => (
+                                <div key={budget.id} className="action-item">
+                                    <div className="action-indicator warning"></div>
+                                    <div className="action-details">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <p className="action-title">{budget.building}</p>
+                                            <span style={{ fontWeight: 800 }}>${budget.total.toLocaleString('es-AR')}</span>
+                                        </div>
+                                        <p className="action-meta">{formatBudgetId(budget.budgetNumber)} · {new Date(budget.createdAt).toLocaleDateString()}</p>
+                                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                                            <Button size="sm" variant="primary" style={{ background: '#10B981', color: 'white', border: 'none' }} onClick={() => { if (confirm('¿Aprobar presupuesto?')) updateBudgetStatus(budget.id, 'aprobado') }}>Aprobar</Button>
+                                            <Button size="sm" variant="outline" style={{ color: '#EF4444', borderColor: '#EF4444' }} onClick={() => { if (confirm('¿Rechazar presupuesto?')) updateBudgetStatus(budget.id, 'rechazado') }}>Rechazar</Button>
+                                            <Button size="sm" variant="outline" onClick={() => generateBudgetPDF(budget)}><Download size={12} /></Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-state">
+                                <FileText size={32} className="text-muted" />
+                                <p>No hay presupuestos pendientes.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+            {activeTab === 'overview' && null}
         </div>
     );
 };

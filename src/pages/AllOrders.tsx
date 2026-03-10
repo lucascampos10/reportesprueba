@@ -4,10 +4,12 @@ import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import {
     Building2, MapPin, Clock, User, Camera, CheckCircle2,
-    AlertTriangle, Droplets, FileText, Upload, X, SlidersHorizontal, ChevronLeft, ChevronRight
+    AlertTriangle, Droplets, FileText, Upload, X, SlidersHorizontal, ChevronLeft, ChevronRight, Download
 } from 'lucide-react';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder, OrderStatus } from '../context/WorkOrderContext';
+import { useBudgets, formatBudgetId } from '../context/BudgetContext';
+import { generateBudgetPDF } from './EdificioDashboard';
 import { uploadImage } from '../lib/storage';
 import './AllOrders.css';
 
@@ -16,6 +18,7 @@ type SortKey = 'date_desc' | 'date_asc' | 'priority_high' | 'priority_low';
 
 const AllOrders: React.FC = () => {
     const { orders, closeOrder } = useWorkOrders();
+    const { budgets } = useBudgets();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -345,14 +348,50 @@ const AllOrders: React.FC = () => {
                             </div>
                         </div>
 
-                        {selectedOrder.budgetStatus && (
-                            <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Estado del Presupuesto:</span>
-                                <span className={`status-badge badge-${selectedOrder.budgetStatus === 'borrador' ? 'warning' : selectedOrder.budgetStatus === 'enviado' ? 'info' : selectedOrder.budgetStatus === 'aprobado' ? 'success' : 'danger'}`}>
-                                    {selectedOrder.budgetStatus === 'borrador' ? 'Pendiente de Envío' : selectedOrder.budgetStatus.charAt(0).toUpperCase() + selectedOrder.budgetStatus.slice(1)}
-                                </span>
-                            </div>
-                        )}
+                        {selectedOrder.budgetStatus && (() => {
+                            const linkedBudget = budgets.find(b => b.orderId === selectedOrder.id);
+                            return (
+                                <div style={{ marginBottom: '1.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                                    <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>Presupuesto Vinculado</span>
+                                            <span className={`status-badge badge-${selectedOrder.budgetStatus === 'borrador' ? 'warning' : selectedOrder.budgetStatus === 'enviado' ? 'info' : selectedOrder.budgetStatus === 'aprobado' ? 'success' : 'danger'}`}>
+                                                {selectedOrder.budgetStatus === 'borrador' ? 'Borrador' : selectedOrder.budgetStatus.charAt(0).toUpperCase() + selectedOrder.budgetStatus.slice(1)}
+                                            </span>
+                                        </div>
+                                        {linkedBudget && (
+                                            <Button size="sm" variant="outline" onClick={() => generateBudgetPDF(linkedBudget)}>
+                                                <Download size={14} style={{ marginRight: '0.25rem' }} /> Descargar PDF
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {linkedBudget && (
+                                        <div style={{ padding: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between' }}>
+                                            <div>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>ID Presupuesto</p>
+                                                <p style={{ margin: 0, fontWeight: 600, fontSize: '0.9rem' }}>{formatBudgetId(linkedBudget.budgetNumber)}</p>
+                                            </div>
+                                            <div>
+                                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Total</p>
+                                                <p style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem', color: 'var(--color-primary)' }}>
+                                                    ${linkedBudget.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                                                </p>
+                                            </div>
+                                            <div style={{ flexBasis: '100%' }}>
+                                                <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', fontWeight: 600 }}>Ítems a presupuestar:</p>
+                                                <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.85rem', color: 'var(--color-text)' }}>
+                                                    {linkedBudget.items.map((item, idx) => (
+                                                        <li key={idx} style={{ marginBottom: '0.25rem' }}>
+                                                            {item.qty}x {item.description} - ${(Number(item.qty) * Number(item.unit_price)).toLocaleString('es-AR')}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
 
                         <div style={{ padding: '0.75rem', background: 'var(--color-bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
                             <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

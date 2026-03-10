@@ -4,13 +4,22 @@
 
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+@media (max-width: 640px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
 }
 
 .kpi-card {
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
 }
 
 .kpi-card:hover {

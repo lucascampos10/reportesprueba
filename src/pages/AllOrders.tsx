@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
@@ -18,9 +18,14 @@ type SortKey = 'date_desc' | 'date_asc' | 'priority_high' | 'priority_low';
 
 const AllOrders: React.FC = () => {
     const { orders, closeOrder } = useWorkOrders();
-    const { budgets } = useBudgets();
+    const { budgets, fetchBudgets } = useBudgets();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+    useEffect(() => {
+        // Asegurar que los presupuestos estén cargados si el usuario entra directo a esta vista
+        if (budgets.length === 0) fetchBudgets();
+    }, []);
 
     // Close order modal - separate state so modals don't conflict
     const [closeOrderTarget, setCloseOrderTarget] = useState<WorkOrder | null>(null);

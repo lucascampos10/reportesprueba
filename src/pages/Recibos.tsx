@@ -19,6 +19,7 @@ const Recibos: React.FC = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     // Form state
     const [clientName, setClientName] = useState('');
@@ -33,6 +34,7 @@ const Recibos: React.FC = () => {
         setAmountWritten('');
         setConcept('');
         setTotalAmount(0);
+        setShowSuccess(false);
     };
 
     const handleLinkedBudgetChange = (id: string) => {
@@ -63,13 +65,13 @@ const Recibos: React.FC = () => {
             });
 
             if (newReceipt) {
-                alert('Recibo generado exitosamente');
-                setIsModalOpen(false);
-                resetForm();
-                // Optionally generate PDF immediately
-                generateReceiptPDF(newReceipt);
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setIsModalOpen(false);
+                    resetForm();
+                }, 2000);
             } else {
-                alert('No se pudo generar el recibo. Verifique la consola para más detalles.');
+                alert('No se pudo generar el recibo. Verifique la conexión o los datos.');
             }
         } catch (error: any) {
             console.error('Error in handleSubmit:', error);
@@ -249,11 +251,28 @@ const Recibos: React.FC = () => {
                 footer={
                     <>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button isLoading={isLoading} onClick={handleSubmit}>Generar Recibo</Button>
+                        <Button isLoading={isLoading} onClick={handleSubmit} disabled={showSuccess}>
+                            {showSuccess ? '¡Creado!' : 'Generar Recibo'}
+                        </Button>
                     </>
                 }
             >
                 <div className="pres-form">
+                    {showSuccess && (
+                        <div style={{
+                            background: 'rgba(16,185,129,0.1)',
+                            color: '#10B981',
+                            padding: '1rem',
+                            borderRadius: 'var(--radius-md)',
+                            textAlign: 'center',
+                            fontWeight: 600,
+                            marginBottom: '1rem',
+                            border: '1px solid rgba(16,185,129,0.2)'
+                        }}>
+                            ¡El recibo se ha creado correctamente!
+                        </div>
+                    )}
+
                     <div className="form-group">
                         <label className="form-label">Vincular a Presupuesto (opcional)</label>
                         <select

@@ -136,7 +136,7 @@ const LandingPage: React.FC = () => {
                     <form onSubmit={handleSubmit}>
                         <CardHeader className="text-center pb-2">
                             <CardTitle>Reportar un Problema</CardTitle>
-                            <p className="text-sm text-muted mt-2">Completuá los datos para que podamos ayudarte lo antes posible.</p>
+                            <p className="text-sm text-muted mt-2">Completá los datos para que podamos ayudarte lo antes posible.</p>
                         </CardHeader>
 
                         <CardContent className="landing-form-content">
@@ -218,9 +218,9 @@ const LandingPage: React.FC = () => {
                                             value={priority}
                                             onChange={(e) => setPriority(e.target.value as Priority)}
                                         >
-                                            <option value="baja">Baja (Puede esperar)</option>
-                                            <option value="media">Media (Pronta atención)</option>
-                                            <option value="alta">Urgente (Emergencia)</option>
+                                            <option value="alta">Alta (1 a 3 días)</option>
+                                            <option value="media">Media (3 a 7 días)</option>
+                                            <option value="baja">Baja (Más de 7 días)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -284,6 +284,22 @@ const LandingPage: React.FC = () => {
                                 </div>
                             </div>
 
+                            <div className="form-section">
+                                <div style={{
+                                    background: 'rgba(234, 179, 8, 0.1)',
+                                    border: '1px solid rgba(234, 179, 8, 0.3)',
+                                    borderRadius: '8px',
+                                    padding: '1rem',
+                                    display: 'flex',
+                                    gap: '0.75rem',
+                                    alignItems: 'center'
+                                }}>
+                                    <AlertTriangle size={20} className="text-warning" style={{ flexShrink: 0 }} />
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                                        <strong>Atención:</strong> Un integrante de nuestro equipo se comunicará pronto para coordinar una cita y revisar el inconveniente.
+                                    </p>
+                                </div>
+                            </div>
                         </CardContent>
 
                         <CardFooter className="landing-footer">

@@ -308,7 +308,7 @@ const Presupuestos: React.FC = () => {
                         <label className="form-label">Vincular a Orden de Trabajo (opcional)</label>
                         <select className="form-select" value={linkedOrderId} onChange={e => handleLinkedOrderChange(e.target.value)}>
                             <option value="">Sin vinculación</option>
-                            {orders.filter(o => o.status !== 'resolved').map(o => (
+                            {orders.filter(o => o.status !== 'resolved' && (!o.budgetStatus || o.budgetStatus !== 'aprobado')).map(o => (
                                 <option key={o.id} value={o.id}>{formatOrderId(o.orderNumber)} — {o.title}</option>
                             ))}
                         </select>

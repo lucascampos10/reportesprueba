@@ -6,7 +6,6 @@ export type BudgetStatus = 'borrador' | 'enviado' | 'aprobado' | 'rechazado';
 
 export interface BudgetItem {
     description: string;
-    qty: number;
     unit_price: number;
 }
 

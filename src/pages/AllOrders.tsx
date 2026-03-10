@@ -353,15 +353,17 @@ const AllOrders: React.FC = () => {
                             </div>
                         </div>
 
-                        {selectedOrder.budgetStatus && (() => {
+                        {(() => {
                             const linkedBudget = budgets.find(b => b.orderId === selectedOrder.id);
+                            if (!linkedBudget) return null;
+
                             return (
                                 <div style={{ marginBottom: '1.5rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                                     <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                             <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>Presupuesto Vinculado</span>
-                                            <span className={`status-badge badge-${selectedOrder.budgetStatus === 'borrador' ? 'warning' : selectedOrder.budgetStatus === 'enviado' ? 'info' : selectedOrder.budgetStatus === 'aprobado' ? 'success' : 'danger'}`}>
-                                                {selectedOrder.budgetStatus === 'borrador' ? 'Borrador' : selectedOrder.budgetStatus.charAt(0).toUpperCase() + selectedOrder.budgetStatus.slice(1)}
+                                            <span className={`status-badge badge-${linkedBudget.status === 'borrador' ? 'warning' : linkedBudget.status === 'enviado' ? 'info' : linkedBudget.status === 'aprobado' ? 'success' : 'danger'}`}>
+                                                {linkedBudget.status === 'borrador' ? 'Borrador' : linkedBudget.status.charAt(0).toUpperCase() + linkedBudget.status.slice(1)}
                                             </span>
                                         </div>
                                         {linkedBudget && (

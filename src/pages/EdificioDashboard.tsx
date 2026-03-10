@@ -3,6 +3,7 @@ import { CheckCircle2, XCircle, FileText, Download } from 'lucide-react';
 import { useBudgets, formatBudgetId } from '../context/BudgetContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { logoBase64 } from '../assets/logoBase64';
 import '../pages/Presupuestos.css'; // Reutilizamos estilos de tarjetas
 
 export const generateBudgetPDF = (budget: any) => {
@@ -13,7 +14,7 @@ export const generateBudgetPDF = (budget: any) => {
 
     // ─── LEFT: Logo + Company info ──────────────────────────────────
     try {
-        doc.addImage('/logo-novak.png', 'PNG', 15, 10, 22, 22);
+        doc.addImage(logoBase64, 'PNG', 15, 10, 22, 22);
     } catch (e) {
         // Continue if image fails
     }

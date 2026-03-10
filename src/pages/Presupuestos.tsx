@@ -6,6 +6,7 @@ import { useBudgets, formatBudgetId, type BudgetItem, type BudgetStatus } from '
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { logoBase64 } from '../assets/logoBase64';
 import './Presupuestos.css';
 
 const ADMIN_NAMES = [
@@ -37,7 +38,7 @@ const generateBudgetPDF = (budget: ReturnType<typeof useBudgets>['budgets'][0]) 
 
     // ─── LEFT: Logo + Company info ──────────────────────────────────
     try {
-        doc.addImage('/logo-novak.png', 'PNG', 15, 10, 22, 22);
+        doc.addImage(logoBase64, 'PNG', 15, 10, 22, 22);
     } catch (e) {
         // Continue if image fails
     }

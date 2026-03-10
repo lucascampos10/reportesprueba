@@ -63,11 +63,17 @@ const Recibos: React.FC = () => {
             });
 
             if (newReceipt) {
+                alert('Recibo generado exitosamente');
                 setIsModalOpen(false);
                 resetForm();
+                // Optionally generate PDF immediately
+                generateReceiptPDF(newReceipt);
+            } else {
+                alert('No se pudo generar el recibo. Verifique la consola para más detalles.');
             }
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            console.error('Error in handleSubmit:', error);
+            alert(`Error al procesar: ${error.message || 'Error desconocido'}`);
         } finally {
             setIsLoading(false);
         }

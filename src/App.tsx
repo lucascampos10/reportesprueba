@@ -20,6 +20,7 @@ import { AgendaPage, ContactosPage } from './pages/ComingSoon';
 import { WorkOrderProvider } from './context/WorkOrderContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { BudgetProvider } from './context/BudgetContext';
+import { ReceiptProvider } from './context/ReceiptContext';
 
 // Guard component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -64,52 +65,54 @@ const App: React.FC = () => {
     <NotificationProvider>
       <WorkOrderProvider>
         <BudgetProvider>
-          <BrowserRouter>
-            <Routes>
-              {/* Public Route */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<Login />} />
+          <ReceiptProvider>
+            <BrowserRouter>
+              <Routes>
+                {/* Public Route */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<Login />} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                <Route index element={<Dashboard />} />
+                {/* Admin Routes */}
+                <Route path="/admin" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                  <Route index element={<Dashboard />} />
 
-                {/* Órdenes de Trabajo */}
-                <Route path="ordenes/nueva" element={<CreateOrder />} />
-                <Route path="ordenes/pendientes" element={<PendingOrders />} />
-                <Route path="ordenes/historial" element={<AllOrders />} />
+                  {/* Órdenes de Trabajo */}
+                  <Route path="ordenes/nueva" element={<CreateOrder />} />
+                  <Route path="ordenes/pendientes" element={<PendingOrders />} />
+                  <Route path="ordenes/historial" element={<AllOrders />} />
 
-                {/* Legacy redirects for old URLs */}
-                <Route path="crear-orden" element={<Navigate to="/admin/ordenes/nueva" replace />} />
-                <Route path="pendientes" element={<Navigate to="/admin/ordenes/pendientes" replace />} />
-                <Route path="historial" element={<Navigate to="/admin/ordenes/historial" replace />} />
+                  {/* Legacy redirects for old URLs */}
+                  <Route path="crear-orden" element={<Navigate to="/admin/ordenes/nueva" replace />} />
+                  <Route path="pendientes" element={<Navigate to="/admin/ordenes/pendientes" replace />} />
+                  <Route path="historial" element={<Navigate to="/admin/ordenes/historial" replace />} />
 
-                {/* Finanzas */}
-                <Route path="finanzas" element={<Finanzas />} />
-                <Route path="finanzas/presupuestos" element={<Presupuestos />} />
-                <Route path="finanzas/recibos" element={<Recibos />} />
+                  {/* Finanzas */}
+                  <Route path="finanzas" element={<Finanzas />} />
+                  <Route path="finanzas/presupuestos" element={<Presupuestos />} />
+                  <Route path="finanzas/recibos" element={<Recibos />} />
 
-                {/* Coming Soon */}
-                <Route path="agenda" element={<AgendaPage />} />
-                <Route path="contactos" element={<ContactosPage />} />
-                <Route path="ajustes" element={<div className="p-8"><h1>Ajustes de Sistema (Próximamente)</h1></div>} />
-              </Route>
+                  {/* Coming Soon */}
+                  <Route path="agenda" element={<AgendaPage />} />
+                  <Route path="contactos" element={<ContactosPage />} />
+                  <Route path="ajustes" element={<div className="p-8"><h1>Ajustes de Sistema (Próximamente)</h1></div>} />
+                </Route>
 
-              {/* Worker Routes */}
-              <Route path="/operario" element={<ProtectedRoute><WorkerLayout /></ProtectedRoute>}>
-                <Route index element={<WorkerDashboard />} />
-                <Route path="historial" element={<WorkerHistory />} />
-              </Route>
+                {/* Worker Routes */}
+                <Route path="/operario" element={<ProtectedRoute><WorkerLayout /></ProtectedRoute>}>
+                  <Route index element={<WorkerDashboard />} />
+                  <Route path="historial" element={<WorkerHistory />} />
+                </Route>
 
-              {/* Edificio Admin Routes */}
-              <Route path="/edificio" element={<ProtectedRoute><EdificioLayout /></ProtectedRoute>}>
-                <Route index element={<EdificioDashboard />} />
-              </Route>
+                {/* Edificio Admin Routes */}
+                <Route path="/edificio" element={<ProtectedRoute><EdificioLayout /></ProtectedRoute>}>
+                  <Route index element={<EdificioDashboard />} />
+                </Route>
 
-              {/* Fallback */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
+                {/* Fallback */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </ReceiptProvider>
         </BudgetProvider>
       </WorkOrderProvider>
     </NotificationProvider>

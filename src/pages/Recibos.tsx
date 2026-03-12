@@ -27,8 +27,22 @@ const Recibos: React.FC = () => {
     const [clientName, setClientName] = useState('');
     const [amountWritten, setAmountWritten] = useState('');
     const [concept, setConcept] = useState('');
-    const [totalAmount, setTotalAmount] = useState<number>(0);
+    const [totalAmount, setTotalAmount] = useState<number | ''>('');
     const [linkedBudgetId, setLinkedBudgetId] = useState<string>('');
+
+    // Helper to find true linked order even if order_id UUID is missing in old data
+    const getLinkedOrderForBudget = (b: any) => {
+        let linked = orders.find(o => o.id === b.orderId);
+        if (linked) return linked;
+        
+        // Heuristic fallback for older budgets missing UUID link
+        const searchStr = `${b.notes || ''} ${b.clientName || ''} ${b.building || ''}`.toUpperCase();
+        return orders.find(o => {
+            if (!o.orderNumber) return false;
+            const orderNumStr = String(o.orderNumber);
+            return searchStr.includes(`NP-${orderNumStr.padStart(4, '0')}`) || searchStr.includes(`NP ${orderNumStr}`) || searchStr.includes(orderNumStr);
+        });
+    };
 
     const resetForm = () => {
         setLinkedBudgetId('');
@@ -50,8 +64,8 @@ const Recibos: React.FC = () => {
     };
 
     const handleSubmit = async () => {
-        if (!clientName || !amountWritten || !concept || totalAmount <= 0) {
-            alert('Por favor complete todos los campos obligatorios');
+        if (!clientName || !amountWritten || !concept || totalAmount === '' || Number(totalAmount) <= 0) {
+            alert('Por favor, completá todos los campos correctamente.');
             return;
         }
 
@@ -298,7 +312,7 @@ const Recibos: React.FC = () => {
                                 // Ignore if it already has a receipt
                                 if (receipts.some(r => r.budgetId === b.id)) return false;
                                 // Must have a resolved order
-                                const linkedOrder = orders.find(o => o.id === b.orderId);
+                                const linkedOrder = getLinkedOrderForBudget(b);
                                 return linkedOrder?.status === 'resolved';
                             }).map(b => (
                                 <option key={b.id} value={b.id}>

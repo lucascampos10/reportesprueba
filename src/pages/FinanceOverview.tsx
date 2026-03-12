@@ -24,6 +24,20 @@ const FinanceOverview: React.FC = () => {
 
     // --- Data Calculation ---
 
+    // Helper to find true linked order even if order_id UUID is missing in old data
+    const getLinkedOrderForBudget = (b: any) => {
+        let linked = orders.find(o => o.id === b.orderId);
+        if (linked) return linked;
+        
+        // Heuristic fallback for older budgets missing UUID link
+        const searchStr = `${b.notes || ''} ${b.clientName || ''} ${b.building || ''}`.toUpperCase();
+        return orders.find(o => {
+            if (!o.orderNumber) return false;
+            const orderNumStr = String(o.orderNumber);
+            return searchStr.includes(`NP-${orderNumStr.padStart(4, '0')}`) || searchStr.includes(`NP ${orderNumStr}`) || searchStr.includes(orderNumStr);
+        });
+    };
+
     // 1. Total Earnings (Current Month)
     const now = new Date();
     const currentMonthReceipts = receipts.filter(r => {
@@ -37,8 +51,8 @@ const FinanceOverview: React.FC = () => {
         .filter(b => {
             if (b.status !== 'aprobado') return false;
             if (receipts.some(r => r.budgetId === b.id)) return false;
-            // Get associated order
-            const linkedOrder = orders.find(o => o.id === b.orderId);
+            // Get associated order using robust matching
+            const linkedOrder = getLinkedOrderForBudget(b);
             // Must be resolved (finished by worker) to be pending collection
             return linkedOrder && linkedOrder.status === 'resolved';
         })
@@ -67,7 +81,7 @@ const FinanceOverview: React.FC = () => {
         .filter(b => {
             if (b.status !== 'aprobado') return false;
             if (receipts.some(r => r.budgetId === b.id)) return false;
-            const linkedOrder = orders.find(o => o.id === b.orderId);
+            const linkedOrder = getLinkedOrderForBudget(b);
             return linkedOrder && linkedOrder.status === 'resolved';
         })
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())

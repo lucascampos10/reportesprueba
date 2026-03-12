@@ -31,7 +31,15 @@ const PendingOrders: React.FC = () => {
     // Helper: get the best budget status for an order by checking BudgetContext directly
     // This is bulletproof even if the backend `budget_status` column isn't backfilled yet.
     const getOrderBudgetStatus = (orderId: string, fallbackStatus?: string) => {
-        const linkedBudgets = budgets.filter(b => b.orderId === orderId);
+        const order = orders.find(o => o.id === orderId);
+        const linkedBudgets = budgets.filter(b => {
+            if (b.orderId === orderId) return true;
+            if (!order || !order.orderNumber) return false;
+            
+            const searchStr = `${b.notes || ''} ${b.clientName || ''} ${b.building || ''}`.toUpperCase();
+            const orderNumStr = String(order.orderNumber);
+            return searchStr.includes(`NP-${orderNumStr.padStart(4, '0')}`) || searchStr.includes(`NP ${orderNumStr}`) || searchStr.includes(orderNumStr);
+        });
         
         if (linkedBudgets.length > 0) {
             // Priority: aprobado > enviado > borrador > rechazado

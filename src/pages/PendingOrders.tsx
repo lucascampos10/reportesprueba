@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
-import ImageViewer from '../components/ImageViewer';
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
 import {
     Building2, MapPin, Clock, AlertTriangle, Droplets,
     User, Camera, CheckCircle2, SlidersHorizontal, ChevronLeft, ChevronRight, X
@@ -51,8 +52,6 @@ const PendingOrders: React.FC = () => {
         
         return fallbackStatus; // Trust the context only if we didn't find local budgets
     };
-    const [viewingImages, setViewingImages] = useState<string[] | null>(null);
-    const [ivInitialIndex, setIvInitialIndex] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedWorker, setSelectedWorker] = useState('');
     const [workersList, setWorkersList] = useState<WorkerProfile[]>([]);
@@ -396,16 +395,13 @@ const PendingOrders: React.FC = () => {
                                     {selectedOrder.images && selectedOrder.images.length > 0 ? (
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
                                         {selectedOrder.images.map((img: string, idx: number) => (
-                                            <img
-                                                key={idx}
-                                                src={img}
-                                                alt="Evidencia"
-                                                style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
-                                                onClick={() => {
-                                                    setViewingImages(selectedOrder.images);
-                                                    setIvInitialIndex(idx);
-                                                }}
-                                            />
+                                            <Zoom key={idx}>
+                                                <img
+                                                    src={img}
+                                                    alt="Evidencia"
+                                                    style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px' }}
+                                                />
+                                            </Zoom>
                                         ))}
                                     </div>
                                     ) : (
@@ -419,14 +415,6 @@ const PendingOrders: React.FC = () => {
                     </div>
                 )}
             </Modal>
-
-            {viewingImages && (
-                <ImageViewer
-                    images={viewingImages}
-                    onClose={() => setViewingImages(null)}
-                    initialIndex={ivInitialIndex}
-                />
-            )}
         </div>
     );
 };

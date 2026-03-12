@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../compone
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { formatOrderId, useWorkOrders } from '../context/WorkOrderContext';
+import { useBudgets } from '../context/BudgetContext';
 import {
     CheckCircle2,
     AlertTriangle,
@@ -19,7 +20,19 @@ import './Dashboard.css';
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { orders } = useWorkOrders();
+    const { budgets } = useBudgets();
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Helper: get the best budget status for an order by checking BudgetContext directly
+    const getOrderBudgetStatus = (orderId: string) => {
+        const linkedBudgets = budgets.filter(b => b.orderId === orderId);
+        if (linkedBudgets.length === 0) return undefined;
+        // Priority: aprobado > enviado > borrador > rechazado
+        if (linkedBudgets.some(b => b.status === 'aprobado')) return 'aprobado';
+        if (linkedBudgets.some(b => b.status === 'enviado')) return 'enviado';
+        if (linkedBudgets.some(b => b.status === 'borrador')) return 'borrador';
+        return linkedBudgets[0].status;
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -102,9 +115,9 @@ const Dashboard: React.FC = () => {
                 <div className="critical-tasks-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
                     {(() => {
                         // Group 1: Orders with NO budget at all → need to create one
-                        const noBudget = orders.filter(o => o.status === 'pending' && !o.budgetStatus);
+                        const noBudget = orders.filter(o => o.status === 'pending' && !getOrderBudgetStatus(o.id));
                         // Group 2: Orders with APPROVED budget, still pending → need to assign worker
-                        const approvedPending = orders.filter(o => o.status === 'pending' && o.budgetStatus === 'aprobado');
+                        const approvedPending = orders.filter(o => o.status === 'pending' && getOrderBudgetStatus(o.id) === 'aprobado');
                         const criticalOrders = [...noBudget, ...approvedPending].slice(0, 6);
 
                         if (criticalOrders.length === 0) {
@@ -116,7 +129,7 @@ const Dashboard: React.FC = () => {
                         }
 
                         return criticalOrders.map(order => {
-                            const hasApprovedBudget = order.budgetStatus === 'aprobado';
+                            const hasApprovedBudget = getOrderBudgetStatus(order.id) === 'aprobado';
                             return (
                                 <div key={order.id} className="card critical-card" style={{ borderLeft: `4px solid ${hasApprovedBudget ? '#10B981' : '#EF4444'}`, background: hasApprovedBudget ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)', padding: '1rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>

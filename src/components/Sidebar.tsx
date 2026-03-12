@@ -17,13 +17,9 @@ interface NavGroup {
     singlePath?: string;
 }
 
-const navGroups: NavGroup[] = [
-    {
-        label: 'Dashboard',
-        icon: <LayoutDashboard size={20} />,
-        basePath: '/admin',
-        singlePath: '/admin',
-    },
+// ─── Role-based Navigation Configurations ────────────────────────────────────
+const ADMIN_NAV: NavGroup[] = [
+    { label: 'Dashboard', icon: <LayoutDashboard size={20} />, basePath: '/admin', singlePath: '/admin' },
     {
         label: 'Órdenes de Trabajo',
         icon: <ClipboardList size={20} />,
@@ -44,34 +40,41 @@ const navGroups: NavGroup[] = [
             { name: 'Recibos', path: '/admin/finanzas/recibos', icon: <Receipt size={16} /> },
         ],
     },
-    {
-        label: 'Agenda',
-        icon: <Calendar size={20} />,
-        basePath: '/admin/agenda',
-        singlePath: '/admin/agenda',
-        soon: true,
-    },
-    {
-        label: 'Contactos',
-        icon: <Users size={20} />,
-        basePath: '/admin/contactos',
-        singlePath: '/admin/contactos',
-        soon: true,
-    },
-    {
-        label: 'Ajustes',
-        icon: <Settings size={20} />,
-        basePath: '/admin/ajustes',
-        singlePath: '/admin/ajustes',
-        soon: true,
-    },
+    { label: 'Agenda', icon: <Calendar size={20} />, basePath: '/admin/agenda', singlePath: '/admin/agenda', soon: true },
+    { label: 'Contactos', icon: <Users size={20} />, basePath: '/admin/contactos', singlePath: '/admin/contactos', soon: true },
+    { label: 'Ajustes', icon: <Settings size={20} />, basePath: '/admin/ajustes', singlePath: '/admin/ajustes', soon: true },
+];
+
+const WORKER_NAV: NavGroup[] = [
+    { label: 'Mis Órdenes', icon: <LayoutDashboard size={20} />, basePath: '/operario', singlePath: '/operario' },
+    { label: 'Historial', icon: <ClipboardList size={20} />, basePath: '/operario/historial', singlePath: '/operario/historial' },
+];
+
+const EDIFICIO_NAV: NavGroup[] = [
+    { label: 'Dashboard', icon: <LayoutDashboard size={20} />, basePath: '/edificio', singlePath: '/edificio' },
+    { label: 'Presupuestos', icon: <FileText size={20} />, basePath: '/edificio/presupuestos', singlePath: '/edificio/presupuestos' },
+    { label: 'Reportes Vecinos', icon: <ClipboardList size={20} />, basePath: '/edificio/reportes', singlePath: '/edificio/reportes' },
 ];
 
 const Sidebar: React.FC = () => {
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [openGroups, setOpenGroups] = useState<string[]>(['Órdenes de Trabajo', 'Finanzas']);
+    const [userRole, setUserRole] = useState<string>('admin');
     const navigate = useNavigate();
     const location = useLocation();
+
+    React.useEffect(() => {
+        const fetchRole = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                if (profile) setUserRole(profile.role);
+            }
+        };
+        fetchRole();
+    }, []);
+
+    const navGroups = userRole === 'operario' ? WORKER_NAV : userRole === 'edificio_admin' ? EDIFICIO_NAV : ADMIN_NAV;
 
     const toggleSidebar = () => setIsMobileOpen(!isMobileOpen);
 
@@ -117,7 +120,7 @@ const Sidebar: React.FC = () => {
                                     <li key={group.label} className="nav-item">
                                         <NavLink
                                             to={group.singlePath}
-                                            end={group.singlePath === '/admin'}
+                                            end={['/admin', '/operario', '/edificio'].includes(group.singlePath)}
                                             className={({ isActive }) => `nav-link ${isActive ? 'active' : ''} ${group.soon ? 'nav-link-soon' : ''}`}
                                             onClick={() => setIsMobileOpen(false)}
                                         >

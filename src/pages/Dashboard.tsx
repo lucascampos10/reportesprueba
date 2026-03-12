@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../compone
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { formatOrderId, useWorkOrders } from '../context/WorkOrderContext';
+import { useBudgets } from '../context/BudgetContext';
+import { useReceipts } from '../context/ReceiptContext';
 import {
     CheckCircle2,
     AlertTriangle,
@@ -12,13 +14,16 @@ import {
     Droplets,
     MapPin,
     Filter,
-    Plus
+    Plus,
+    DollarSign
 } from 'lucide-react';
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { orders } = useWorkOrders();
+    const { budgets } = useBudgets();
+    const { receipts } = useReceipts();
     const [searchTerm, setSearchTerm] = useState('');
 
     const getStatusBadge = (status: string) => {
@@ -105,7 +110,18 @@ const Dashboard: React.FC = () => {
                         const noBudget = orders.filter(o => o.status === 'pending' && !o.budgetStatus);
                         // Group 2: Orders with APPROVED budget, still pending → need to assign worker
                         const approvedPending = orders.filter(o => o.status === 'pending' && o.budgetStatus === 'aprobado');
-                        const criticalOrders = [...noBudget, ...approvedPending].slice(0, 6);
+                        
+                        // Group 3: Orders RESOLVED but no receipt exists yet
+                        const pendingPayment = orders.filter(o => {
+                            if (o.status !== 'resolved') return false;
+                            const budget = budgets.find(b => b.orderId === o.id && b.status === 'aprobado');
+                            if (!budget) return false;
+                            // Check if a receipt exists for this budget
+                            const hasReceipt = receipts.some(r => r.budgetId === budget.id);
+                            return !hasReceipt;
+                        });
+
+                        const criticalOrders = [...noBudget, ...approvedPending, ...pendingPayment].slice(0, 8);
 
                         if (criticalOrders.length === 0) {
                             return (
@@ -117,30 +133,54 @@ const Dashboard: React.FC = () => {
 
                         return criticalOrders.map(order => {
                             const hasApprovedBudget = order.budgetStatus === 'aprobado';
+                            const isResolved = order.status === 'resolved';
+
+                            let cardColor = '#EF4444'; // Red for missing budget
+                            let badgeText = 'Sin Presupuesto';
+                            let actionText = 'Presupuestar';
+                            let actionPath = '/admin/finanzas/presupuestos';
+                            let badgeClass = 'badge-danger';
+                            let icon = <AlertTriangle size={14} />;
+
+                            if (isResolved) {
+                                cardColor = '#3B82F6'; // Blue for payment
+                                badgeText = 'Trabajo Finalizado — Cobrar';
+                                actionText = 'Generar Recibo';
+                                actionPath = '/admin/finanzas/recibos';
+                                badgeClass = 'badge-info';
+                                icon = <DollarSign size={14} />;
+                            } else if (hasApprovedBudget) {
+                                cardColor = '#10B981'; // Green for assignment
+                                badgeText = 'Aprobado — Asignar Operario';
+                                actionText = 'Asignar Operario';
+                                actionPath = '/admin/ordenes/pendientes';
+                                badgeClass = 'badge-success';
+                                icon = <CheckCircle2 size={14} />;
+                            }
+
                             return (
-                                <div key={order.id} className="card critical-card" style={{ borderLeft: `4px solid ${hasApprovedBudget ? '#10B981' : '#EF4444'}`, background: hasApprovedBudget ? 'rgba(16, 185, 129, 0.05)' : 'rgba(239, 68, 68, 0.05)', padding: '1rem' }}>
+                                <div key={order.id} className="card critical-card" style={{ 
+                                    borderLeft: `4px solid ${cardColor}`, 
+                                    background: `${cardColor}0D`, 
+                                    padding: '1rem',
+                                    transition: 'transform 0.2s ease'
+                                }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                                         <span style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>{formatOrderId(order.orderNumber)}</span>
-                                        {hasApprovedBudget ? (
-                                            <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Aprobado — Asignar Operario</span>
-                                        ) : (
-                                            <span className="badge badge-danger" style={{ fontSize: '0.7rem' }}>Sin Presupuesto</span>
-                                        )}
+                                        <span className={`badge ${badgeClass}`} style={{ fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            {icon} {badgeText}
+                                        </span>
                                     </div>
                                     <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.25rem', color: 'white' }}>{order.title}</h4>
                                     <p style={{ fontSize: '0.8rem', opacity: 0.7, marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', color: 'rgba(255,255,255,0.7)' }}>
                                         {order.description}
                                     </p>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
                                             <Building2 size={14} />
                                             <span>{order.building}</span>
                                         </div>
-                                        {hasApprovedBudget ? (
-                                            <Button size="sm" onClick={() => navigate('/admin/ordenes/pendientes')}>Asignar Operario</Button>
-                                        ) : (
-                                            <Button size="sm" onClick={() => navigate('/admin/finanzas/presupuestos')}>Presupuestar</Button>
-                                        )}
+                                        <Button size="sm" onClick={() => navigate(actionPath)}>{actionText}</Button>
                                     </div>
                                 </div>
                             );

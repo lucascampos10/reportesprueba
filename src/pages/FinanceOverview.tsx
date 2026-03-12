@@ -32,9 +32,16 @@ const FinanceOverview: React.FC = () => {
     });
     const totalEarningsMonth = currentMonthReceipts.reduce((sum, r) => sum + r.totalAmount, 0);
 
-    // 2. Pending Collection (Approved Budgets without Receipt)
+    // 2. Pending Collection (Approved Budgets without Receipt, BUT only if order is Resolved)
     const pendingCollection = budgets
-        .filter(b => b.status === 'aprobado' && !receipts.some(r => r.budgetId === b.id))
+        .filter(b => {
+            if (b.status !== 'aprobado') return false;
+            if (receipts.some(r => r.budgetId === b.id)) return false;
+            // Get associated order
+            const linkedOrder = orders.find(o => o.id === b.orderId);
+            // Must be resolved (finished by worker) to be pending collection
+            return linkedOrder && linkedOrder.status === 'resolved';
+        })
         .reduce((sum, b) => sum + b.total, 0);
 
     // 3. Budgets awaiting approval

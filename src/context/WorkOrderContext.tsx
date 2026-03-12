@@ -120,7 +120,7 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
             resolutionNotes: o.resolution_notes || '',
             signatureUrl: o.signature_url || undefined,
             receptorName: o.receptor_name || '',
-            budgetStatus: o.budgets && o.budgets.length > 0 ? o.budgets[0].status : undefined,
+            budgetStatus: o.budget_status || (o.budgets && o.budgets.length > 0 ? o.budgets[0].status : undefined),
             availability: o.availability || '',
         }));
         setOrders(mappedOrders);

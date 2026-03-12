@@ -114,6 +114,12 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             notes: b.notes,
         });
         if (error) { console.error('Error adding budget:', error); throw error; }
+
+        // Sync budget_status on the linked work_order
+        if (b.orderId) {
+            await supabase.from('work_orders').update({ budget_status: b.status }).eq('id', b.orderId);
+        }
+
         fetchBudgets();
     };
 
@@ -123,6 +129,11 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         
         const budget = budgets.find(b => b.id === id);
         if (budget) {
+            // Sync budget_status on the linked work_order
+            if (budget.orderId) {
+                await supabase.from('work_orders').update({ budget_status: status }).eq('id', budget.orderId);
+            }
+
             if (status === 'enviado') {
                 addNotification(
                     `Presupuesto enviado: ${formatBudgetId(budget.budgetNumber)} para ${budget.building}. Asociado a su solicitud de mantenimiento.`,

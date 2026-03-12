@@ -5,6 +5,7 @@ import { Modal } from '../components/Modal';
 import { Input } from '../components/Input';
 import { useReceipts, formatReceiptId } from '../context/ReceiptContext';
 import { useBudgets, formatBudgetId } from '../context/BudgetContext';
+import { useWorkOrders } from '../context/WorkOrderContext';
 import jsPDF from 'jspdf';
 import { logoBase64 } from '../assets/logoBase64';
 import './Presupuestos.css';
@@ -16,6 +17,7 @@ const Banknote = ({ size, className }: any) => <svg xmlns="http://www.w3.org/200
 const Recibos: React.FC = () => {
     const { receipts, addReceipt, isLoading: isLoadingReceipts } = useReceipts();
     const { budgets } = useBudgets();
+    const { orders } = useWorkOrders();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -291,9 +293,16 @@ const Recibos: React.FC = () => {
                             onChange={(e) => handleLinkedBudgetChange(e.target.value)}
                         >
                             <option value="">Sin vinculación</option>
-                            {budgets.filter(b => b.status === 'aprobado').map(b => (
+                            {budgets.filter(b => {
+                                if (b.status !== 'aprobado') return false;
+                                // Ignore if it already has a receipt
+                                if (receipts.some(r => r.budgetId === b.id)) return false;
+                                // Must have a resolved order
+                                const linkedOrder = orders.find(o => o.id === b.orderId);
+                                return linkedOrder?.status === 'resolved';
+                            }).map(b => (
                                 <option key={b.id} value={b.id}>
-                                    {formatBudgetId(b.budgetNumber)} — {b.building} (${b.total})
+                                    {formatBudgetId(b.budgetNumber)} — {b.building} (${b.total.toLocaleString('es-AR')})
                                 </option>
                             ))}
                         </select>

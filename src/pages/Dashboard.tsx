@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../components/Card';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -16,6 +17,7 @@ import {
 import './Dashboard.css';
 
 const Dashboard: React.FC = () => {
+    const navigate = useNavigate();
     const { orders } = useWorkOrders();
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -114,7 +116,7 @@ const Dashboard: React.FC = () => {
                                         <Building2 size={14} />
                                         <span>{order.building}</span>
                                     </div>
-                                    <Button size="sm" onClick={() => window.location.href = '/admin/finanzas/presupuestos'}>Ir a Presupuestar</Button>
+                                    <Button size="sm" onClick={() => navigate('/admin/finanzas/presupuestos')}>Presupuestar</Button>
                                 </div>
                             </div>
                         ))

@@ -14,7 +14,8 @@ import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
-import ImageViewer from '../components/ImageViewer';
+import Zoom from 'react-medium-image-zoom';
+import 'react-medium-image-zoom/dist/styles.css';
 import { supabase } from '../lib/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -103,8 +104,6 @@ const EdificioDashboard: React.FC = () => {
     const [isPswModalOpen, setIsPswModalOpen] = useState(false);
     const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
     const [viewingOrder, setViewingOrder] = useState<any | null>(null);
-    const [viewingImages, setViewingImages] = useState<string[] | null>(null);
-    const [ivInitialIndex, setIvInitialIndex] = useState(0);
 
     // Filter relevant data
     const pendingBudgets = budgets.filter(b => b.status === 'enviado');
@@ -330,16 +329,13 @@ const EdificioDashboard: React.FC = () => {
                             {viewingOrder.images && viewingOrder.images.length > 0 ? (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                                     {viewingOrder.images.map((img: string, idx: number) => (
-                                        <img 
-                                            key={idx} 
-                                            src={img} 
-                                            alt="Evidencia" 
-                                            style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)' }} 
-                                            onClick={() => {
-                                                setViewingImages(viewingOrder.images);
-                                                setIvInitialIndex(idx);
-                                            }}
-                                        />
+                                        <Zoom key={idx}>
+                                            <img 
+                                                src={img} 
+                                                alt="Evidencia" 
+                                                style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                                            />
+                                        </Zoom>
                                     ))}
                                 </div>
                             ) : <p style={{ fontSize: '0.85rem', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>No se adjuntaron fotos.</p>}
@@ -349,16 +345,14 @@ const EdificioDashboard: React.FC = () => {
                              <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '1rem' }}>Trabajo Finalizado</h4>
                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                                  {viewingOrder.resolvedImages.map((img: string, idx: number) => (
-                                     <img 
-                                         key={idx} 
-                                         src={img} 
-                                         alt="Resultado" 
-                                         style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)' }} 
-                                         onClick={() => {
-                                             setViewingImages(viewingOrder.resolvedImages);
-                                             setIvInitialIndex(idx);
-                                         }}
-                                     />
+                                     <Zoom key={idx}>
+                                         <img 
+                                             key={idx} 
+                                             src={img} 
+                                             alt="Resultado" 
+                                             style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                                         />
+                                     </Zoom>
                                  ))}
                              </div>
                          </div>
@@ -366,14 +360,6 @@ const EdificioDashboard: React.FC = () => {
                     </div>
                 )}
             </Modal>
-
-            {viewingImages && (
-                <ImageViewer 
-                    images={viewingImages} 
-                    onClose={() => setViewingImages(null)} 
-                    initialIndex={ivInitialIndex}
-                />
-            )}
 
             {activeTab === 'overview' && null}
         </div>

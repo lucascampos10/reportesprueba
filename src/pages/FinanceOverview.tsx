@@ -62,6 +62,17 @@ const FinanceOverview: React.FC = () => {
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, 5);
 
+    // 6. Pending Collection List (Approved, Order Resolved, No Receipt)
+    const pendingCollectionList = budgets
+        .filter(b => {
+            if (b.status !== 'aprobado') return false;
+            if (receipts.some(r => r.budgetId === b.id)) return false;
+            const linkedOrder = orders.find(o => o.id === b.orderId);
+            return linkedOrder && linkedOrder.status === 'resolved';
+        })
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5);
+
     // --- Render ---
 
     return (
@@ -187,6 +198,33 @@ const FinanceOverview: React.FC = () => {
                             <div className="empty-state">
                                 <FileText size={32} className="text-muted" />
                                 <p>No hay presupuestos esperando respuesta.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Pending Collection (Ready to bill) */}
+                <div className="actions-section">
+                    <div className="section-header">
+                        <h2>Pendientes de Cobro</h2>
+                        <button className="view-all-btn" onClick={() => navigate('/admin/finanzas/recibos')}>Hacer Recibo <ArrowRight size={14} /></button>
+                    </div>
+                    <div className="action-list">
+                        {pendingCollectionList.length > 0 ? (
+                            pendingCollectionList.map(budget => (
+                                <div key={budget.id} className="action-item" onClick={() => navigate('/admin/finanzas/recibos')}>
+                                    <div className="action-indicator success"></div>
+                                    <div className="action-details">
+                                        <p className="action-title">{budget.clientName || budget.building}</p>
+                                        <p className="action-meta">Trabajo Finalizado · {formatBudgetId(budget.budgetNumber)}</p>
+                                    </div>
+                                    <DollarSign className="action-arrow text-success" size={16} />
+                                </div>
+                            ))
+                        ) : (
+                            <div className="empty-state">
+                                <CheckCircle2 size={32} className="text-success" />
+                                <p>No hay cobros pendientes por realizar.</p>
                             </div>
                         )}
                     </div>

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
+import { useBudgets } from '../context/BudgetContext';
 import './PendingOrders.css';
 import { supabase } from '../lib/supabase';
 
@@ -24,7 +25,24 @@ type SortKey = 'date_desc' | 'date_asc' | 'priority_high' | 'priority_low';
 
 const PendingOrders: React.FC = () => {
     const { orders, assignWorker } = useWorkOrders();
+    const { budgets } = useBudgets();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
+
+    // Helper: get the best budget status for an order by checking BudgetContext directly
+    // This is bulletproof even if the backend `budget_status` column isn't backfilled yet.
+    const getOrderBudgetStatus = (orderId: string, fallbackStatus?: string) => {
+        const linkedBudgets = budgets.filter(b => b.orderId === orderId);
+        
+        if (linkedBudgets.length > 0) {
+            // Priority: aprobado > enviado > borrador > rechazado
+            if (linkedBudgets.some(b => b.status === 'aprobado')) return 'aprobado';
+            if (linkedBudgets.some(b => b.status === 'enviado')) return 'enviado';
+            if (linkedBudgets.some(b => b.status === 'borrador')) return 'borrador';
+            return linkedBudgets[0].status;
+        }
+        
+        return fallbackStatus; // Trust the context only if we didn't find local budgets
+    };
     const [viewingImages, setViewingImages] = useState<string[] | null>(null);
     const [ivInitialIndex, setIvInitialIndex] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -277,7 +295,7 @@ const PendingOrders: React.FC = () => {
                 footer={
                     <>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        {selectedOrder?.budgetStatus === 'aprobado' ? (
+                        {selectedOrder && getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) === 'aprobado' ? (
                             <Button onClick={handleAssign} disabled={!selectedWorker}>Confirmar Asignación</Button>
                         ) : (
                             <Button disabled>Confirme Presupuesto Primero</Button>
@@ -340,7 +358,7 @@ const PendingOrders: React.FC = () => {
                                 <Card className="assignment-card mix-glass">
                                     <CardContent className="p-4">
                                         <h4 className="info-title mb-3">Asignar Personal</h4>
-                                        {selectedOrder.budgetStatus === 'aprobado' ? (
+                                        {getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) === 'aprobado' ? (
                                             <select
                                                 className="form-select"
                                                 value={selectedWorker}
@@ -357,7 +375,7 @@ const PendingOrders: React.FC = () => {
                                         ) : (
                                             <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', padding: '0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', textAlign: 'center' }}>
                                                 <strong>Atención:</strong> El presupuesto de esta orden no está aprobado. No se puede asignar personal.
-                                                <br />Estado actual: {selectedOrder.budgetStatus ? selectedOrder.budgetStatus : 'Sin Presupuesto'}
+                                                <br />Estado actual: {getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) || 'Sin Presupuesto'}
                                             </div>
                                         )}
                                     </CardContent>

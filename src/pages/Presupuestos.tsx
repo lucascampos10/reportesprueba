@@ -241,8 +241,8 @@ const Presupuestos: React.FC = () => {
             {/* Header */}
             <div className="dashboard-header mb-6" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h1 className="page-title">Presupuestos Mantenimiento</h1>
-                    <p className="page-subtitle">Generá presupuestos premium con glassmorphism para tus clientes.</p>
+                    <h1 className="page-title">Presupuestos</h1>
+                    <p className="page-subtitle">Gestioná y enviá presupuestos profesionales a tus clientes.</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)}>
                     <Plus size={16} style={{ marginRight: '0.4rem' }} /> Nuevo Presupuesto

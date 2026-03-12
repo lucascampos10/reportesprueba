@@ -42,7 +42,7 @@ const ADMIN_NAV: NavGroup[] = [
     },
     { label: 'Agenda', icon: <Calendar size={20} />, basePath: '/admin/agenda', singlePath: '/admin/agenda', soon: true },
     { label: 'Contactos', icon: <Users size={20} />, basePath: '/admin/contactos', singlePath: '/admin/contactos', soon: true },
-    { label: 'Ajustes', icon: <Settings size={20} />, basePath: '/admin/ajustes', singlePath: '/admin/ajustes', soon: true },
+    { label: 'Ajustes', icon: <Settings size={20} />, basePath: '/admin/ajustes', singlePath: '/admin/ajustes' },
 ];
 
 const WORKER_NAV: NavGroup[] = [

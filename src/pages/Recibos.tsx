@@ -8,6 +8,7 @@ import { useBudgets, formatBudgetId } from '../context/BudgetContext';
 import { useWorkOrders } from '../context/WorkOrderContext';
 import jsPDF from 'jspdf';
 import { logoBase64 } from '../assets/logoBase64';
+import { signatureBase64 } from '../assets/signatureBase64';
 import './Presupuestos.css';
 
 // SVG icons as components for specific needs
@@ -182,11 +183,16 @@ const Recibos: React.FC = () => {
         doc.text("Firma Autorizada", 155, 175);
         doc.line(140, 170, 195, 170);
 
-        // Stylized "Automatic" signature
-        doc.setFont("times", "italic");
-        doc.setFontSize(22);
-        doc.setTextColor(30, 60, 120);
-        doc.text("Novak Servicios", 145, 165);
+        // New image-based signature
+        try {
+            doc.addImage(signatureBase64, 'PNG', 145, 145, 45, 25);
+        } catch (e) {
+            // Fallback to text if image fails
+            doc.setFont("times", "italic");
+            doc.setFontSize(22);
+            doc.setTextColor(30, 60, 120);
+            doc.text("Novak Servicios", 145, 165);
+        }
 
         doc.save(`${formatReceiptId(receipt.receiptNumber)}.pdf`);
     };

@@ -550,11 +550,11 @@ const WorkerDashboard: React.FC = () => {
                                     Limpiar Firma
                                 </button>
                             </label>
-                            <div style={{ border: '2px dashed var(--color-border)', borderRadius: 'var(--radius-lg)', background: 'var(--color-bg)', overflow: 'hidden' }}>
+                            <div className="signature-container">
                                 <SignatureCanvas
                                     ref={signaturePadRef}
                                     penColor="black"
-                                    canvasProps={{ width: 450, height: 180, className: 'signature-canvas', style: { width: '100%' } }}
+                                    canvasProps={{ width: 450, height: 300, className: 'signature-canvas', style: { width: '100%' } }}
                                 />
                             </div>
                         </div>

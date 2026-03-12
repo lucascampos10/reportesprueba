@@ -22,6 +22,8 @@ import { WorkOrderProvider } from './context/WorkOrderContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { BudgetProvider } from './context/BudgetContext';
 import { ReceiptProvider } from './context/ReceiptContext';
+import { ThemeProvider } from './context/ThemeContext';
+import SettingsPage from './pages/Settings';
 
 // Guard component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -63,7 +65,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App: React.FC = () => {
   return (
-    <NotificationProvider>
+    <ThemeProvider>
+      <NotificationProvider>
       <WorkOrderProvider>
         <BudgetProvider>
           <ReceiptProvider>
@@ -97,7 +100,7 @@ const App: React.FC = () => {
                   {/* Coming Soon */}
                   <Route path="agenda" element={<AgendaPage />} />
                   <Route path="contactos" element={<ContactosPage />} />
-                  <Route path="ajustes" element={<div className="p-8"><h1>Ajustes de Sistema (Próximamente)</h1></div>} />
+                  <Route path="ajustes" element={<SettingsPage />} />
                 </Route>
 
                 {/* Worker Routes */}
@@ -121,6 +124,7 @@ const App: React.FC = () => {
         </BudgetProvider>
       </WorkOrderProvider>
     </NotificationProvider>
+    </ThemeProvider>
   );
 };
 

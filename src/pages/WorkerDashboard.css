@@ -313,3 +313,22 @@
     color: var(--color-text-muted);
     font-size: 0.9375rem;
 }
+
+/* Signature Improvements */
+.signature-canvas {
+    cursor: crosshair;
+    background: #fff !important;
+    display: block;
+}
+
+.signature-container {
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-bg);
+    overflow: hidden;
+    transition: border-color var(--transition-normal);
+}
+
+.signature-container:focus-within {
+    border-color: var(--color-primary);
+}

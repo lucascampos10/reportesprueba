@@ -56,6 +56,7 @@ const PendingOrders: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedWorker, setSelectedWorker] = useState('');
     const [workersList, setWorkersList] = useState<WorkerProfile[]>([]);
+    const [forceAssign, setForceAssign] = useState(false);
 
     // Filter & sort state
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -115,6 +116,7 @@ const PendingOrders: React.FC = () => {
     const handleOpenDetails = (order: WorkOrder) => {
         setSelectedOrder(order);
         setSelectedWorker('');
+        setForceAssign(false);
         setIsModalOpen(true);
     };
 
@@ -303,7 +305,7 @@ const PendingOrders: React.FC = () => {
                 footer={
                     <>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        {selectedOrder && getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) === 'aprobado' ? (
+                        {selectedOrder && (getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) === 'aprobado' || forceAssign) ? (
                             <Button onClick={handleAssign} disabled={!selectedWorker}>Confirmar Asignación</Button>
                         ) : (
                             <Button disabled>Confirme Presupuesto Primero</Button>
@@ -366,7 +368,7 @@ const PendingOrders: React.FC = () => {
                                 <Card className="assignment-card mix-glass">
                                     <CardContent className="p-4">
                                         <h4 className="info-title mb-3">Asignar Personal</h4>
-                                        {getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) === 'aprobado' ? (
+                                        {getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) === 'aprobado' || forceAssign ? (
                                             <select
                                                 className="form-select"
                                                 value={selectedWorker}
@@ -382,8 +384,17 @@ const PendingOrders: React.FC = () => {
                                             </select>
                                         ) : (
                                             <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', padding: '0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', textAlign: 'center' }}>
-                                                <strong>Atención:</strong> El presupuesto de esta orden no está aprobado. No se puede asignar personal.
-                                                <br />Estado actual: {getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) || 'Sin Presupuesto'}
+                                                <strong>Atención:</strong> El presupuesto de esta orden no está aprobado o no se encuentra vinculado a la orden.
+                                                <br />Estado reportado: {getOrderBudgetStatus(selectedOrder.id, selectedOrder.budgetStatus) || 'Sin Presupuesto'}
+                                                
+                                                <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                                                    <button 
+                                                        onClick={() => setForceAssign(true)}
+                                                        style={{ color: 'var(--color-danger)', background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: 600 }}
+                                                    >
+                                                        Forzar Asignación de todos modos
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </CardContent>

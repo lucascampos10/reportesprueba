@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, FileText, Download, Send, X, Edit, MessageCircle } from 'lucide-react';
+import { Plus, FileText, Download, Send, X, Edit, MessageCircle, Building2, User, Calendar } from 'lucide-react';
 import { Button } from '../components/Button';
+import { Input } from '../components/Input';
 import { Modal } from '../components/Modal';
 import { useBudgets, formatBudgetId, type BudgetItem, type BudgetStatus } from '../context/BudgetContext';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
@@ -346,18 +347,33 @@ const Presupuestos: React.FC = () => {
                     </div>
 
                     <div className="form-group-row">
+                        <Input
+                            label="Edificio / Cliente *"
+                            value={building}
+                            onChange={e => setBuilding(e.target.value)}
+                            placeholder="Ej. Torre Alvear"
+                            leftIcon={<Building2 size={18} />}
+                            required
+                        />
                         <div className="form-group">
-                            <label className="form-label">Edificio / Cliente *</label>
-                            <input className="form-input" value={building} onChange={e => setBuilding(e.target.value)} placeholder="Ej. Torre Alvear" required />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Nombre del Administrador *</label>
-                            <select className="form-select" value={clientName} onChange={e => setClientName(e.target.value)} required>
-                                <option value="">Seleccionar administrador...</option>
-                                {ADMIN_NAMES.map(name => (
-                                    <option key={name} value={name}>{name}</option>
-                                ))}
-                            </select>
+                            <label className="form-label text-sm font-semibold mb-1 block" style={{ color: 'var(--color-text)' }}>Nombre del Administrador *</label>
+                            <div className="input-with-icon relative">
+                                <div className="input-icon absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" style={{ pointerEvents: 'none', color: 'var(--color-text-muted)' }}>
+                                    <User size={18} />
+                                </div>
+                                <select 
+                                    className="form-select pl-10" 
+                                    value={clientName} 
+                                    onChange={e => setClientName(e.target.value)} 
+                                    required
+                                    style={{ paddingLeft: '2.5rem', width: '100%', height: '42px', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)' }}
+                                >
+                                    <option value="">Seleccionar administrador...</option>
+                                    {ADMIN_NAMES.map(name => (
+                                        <option key={name} value={name}>{name}</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -431,15 +447,30 @@ const Presupuestos: React.FC = () => {
                     </div>
 
                     <div className="form-group-row">
-                        <div className="form-group">
-                            <label className="form-label">Plazo de Validez (opcional)</label>
-                            <input className="form-input" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
-                        </div>
+                        <Input
+                            label="Plazo de Validez (opcional)"
+                            type="date"
+                            value={validUntil}
+                            onChange={e => setValidUntil(e.target.value)}
+                            leftIcon={<Calendar size={18} />}
+                        />
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Términos y Condiciones / Notas</label>
-                        <textarea className="form-textarea minimal-textarea" rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ej: No incluye materiales especiales..." />
+                        <label className="form-label text-sm font-semibold mb-1 block" style={{ color: 'var(--color-text)' }}>Términos y Condiciones / Notas</label>
+                        <div className="textarea-container relative">
+                            <div className="textarea-icon absolute left-3 top-3 text-muted-foreground z-10" style={{ pointerEvents: 'none', color: 'var(--color-text-muted)' }}>
+                                <FileText size={18} />
+                            </div>
+                            <textarea 
+                                className="form-textarea minimal-textarea w-full" 
+                                rows={3} 
+                                value={notes} 
+                                onChange={e => setNotes(e.target.value)} 
+                                placeholder="Ej: No incluye materiales especiales..." 
+                                style={{ paddingLeft: '2.5rem', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)', paddingTop: '0.75rem' }}
+                            />
+                        </div>
                     </div>
                 </div>
             </Modal>

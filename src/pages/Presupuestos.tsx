@@ -100,8 +100,13 @@ const generateBudgetPDF = (budget: any) => {
     doc.text(`$${budget.subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text(`TOTAL:`, 140, finalY + 8);
+    doc.text(`PRECIO TOTAL:`, 140, finalY + 8);
     doc.text(`$${budget.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY + 8, { align: 'right' });
+
+    // IVA Note
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'italic');
+    doc.text('(El precio mencionado ya incluye IVA)', 195, finalY + 12, { align: 'right' });
 
     // Notes
     if (budget.notes) {
@@ -440,9 +445,12 @@ const Presupuestos: React.FC = () => {
                             <span>Suma de ítems</span>
                             <span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
                         </div>
-                        <div className="pres-total-row total" style={{ fontSize: '1.4rem' }}>
-                            <span>PRECIO TOTAL CON IVA</span>
-                            <span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                        <div className="pres-total-row total" style={{ fontSize: '1.4rem', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                                <span>PRECIO TOTAL</span>
+                                <span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <span style={{ fontSize: '0.7rem', opacity: 0.8, fontWeight: 500 }}>(El precio mencionado ya incluye IVA)</span>
                         </div>
                     </div>
 

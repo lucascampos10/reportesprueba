@@ -372,10 +372,19 @@ const WorkerDashboard: React.FC = () => {
                             <div className="worker-detail-info-item">
                                 <Building2 size={16} className="icon-col" />
                                 <div>
-                                    <span className="label">Edificio</span>
-                                    <span className="value">{selectedOrder.building}</span>
+                                    <span className="label">Edificio / Depto</span>
+                                    <span className="value">{selectedOrder.building} {selectedOrder.department ? `- ${selectedOrder.department}` : ''}</span>
                                 </div>
                             </div>
+                            {selectedOrder.availability && (
+                                <div className="worker-detail-info-item">
+                                    <Clock size={16} className="icon-col" />
+                                    <div>
+                                        <span className="label">Disponibilidad</span>
+                                        <span className="value">{selectedOrder.availability}</span>
+                                    </div>
+                                </div>
+                            )}
                             <div className="worker-detail-info-item">
                                 <MapPin size={16} className="icon-col" />
                                 <div>

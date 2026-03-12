@@ -333,8 +333,8 @@ const PendingOrders: React.FC = () => {
                                     <div className="meta-item">
                                         <Building2 size={16} className="text-primary-dark" />
                                         <div>
-                                            <span className="meta-label">Edificio</span>
-                                            <span className="meta-value">{selectedOrder.building}</span>
+                                            <span className="meta-label">Edificio / Depto</span>
+                                            <span className="meta-value">{selectedOrder.building} {selectedOrder.department ? `- ${selectedOrder.department}` : ''}</span>
                                         </div>
                                     </div>
                                     <div className="meta-item">
@@ -351,6 +351,15 @@ const PendingOrders: React.FC = () => {
                                             <span className="meta-value">{selectedOrder.reporterName}</span>
                                         </div>
                                     </div>
+                                    {selectedOrder.availability && (
+                                        <div className="meta-item">
+                                            <Clock size={16} className="text-primary-dark" />
+                                            <div>
+                                                <span className="meta-label">Disponibilidad</span>
+                                                <span className="meta-value">{selectedOrder.availability}</span>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="meta-item">
                                         <Clock size={16} className="text-primary-dark" />
                                         <div>

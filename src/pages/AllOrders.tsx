@@ -328,8 +328,8 @@ const AllOrders: React.FC = () => {
                             <div className="resolved-info-item">
                                 <Building2 size={16} className="info-icon" />
                                 <div>
-                                    <span className="info-label">Edificio</span>
-                                    <span className="info-value">{selectedOrder.building}</span>
+                                    <span className="info-label">Edificio / Depto</span>
+                                    <span className="info-value">{selectedOrder.building} {selectedOrder.department ? `- ${selectedOrder.department}` : ''}</span>
                                 </div>
                             </div>
                             <div className="resolved-info-item">
@@ -346,6 +346,15 @@ const AllOrders: React.FC = () => {
                                     <span className="info-value">{selectedOrder.reporterName}</span>
                                 </div>
                             </div>
+                            {selectedOrder.availability && (
+                                <div className="resolved-info-item">
+                                    <Clock size={16} className="info-icon" />
+                                    <div>
+                                        <span className="info-label">Disponibilidad</span>
+                                        <span className="info-value">{selectedOrder.availability}</span>
+                                    </div>
+                                </div>
+                            )}
                             <div className="resolved-info-item">
                                 <Clock size={16} className="info-icon" />
                                 <div>

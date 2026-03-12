@@ -314,6 +314,10 @@ const EdificioDashboard: React.FC = () => {
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div>
+                                <h4 style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Depto / Unidad</h4>
+                                <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{viewingOrder.department || 'Área Común'}</p>
+                            </div>
+                            <div>
                                 <h4 style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Prioridad</h4>
                                 <span className={`priority-badge priority-${viewingOrder.priority === 'alta' ? 'high' : viewingOrder.priority === 'media' ? 'medium' : 'low'}`}>
                                     {viewingOrder.priority.toUpperCase()}
@@ -323,6 +327,12 @@ const EdificioDashboard: React.FC = () => {
                                 <h4 style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Fecha</h4>
                                 <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{viewingOrder.date}</p>
                             </div>
+                            {viewingOrder.availability && (
+                                <div>
+                                    <h4 style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Disponibilidad</h4>
+                                    <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{viewingOrder.availability}</p>
+                                </div>
+                            )}
                         </div>
                         <div>
                             <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '1rem' }}>Evidencia Fotográfica</h4>

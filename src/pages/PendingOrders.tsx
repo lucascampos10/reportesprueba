@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '../components/Card';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import ImageViewer from '../components/ImageViewer';
 import {
     Building2, MapPin, Clock, AlertTriangle, Droplets,
     User, Camera, CheckCircle2, SlidersHorizontal, ChevronLeft, ChevronRight, X
@@ -24,6 +25,8 @@ type SortKey = 'date_desc' | 'date_asc' | 'priority_high' | 'priority_low';
 const PendingOrders: React.FC = () => {
     const { orders, assignWorker } = useWorkOrders();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
+    const [viewingImages, setViewingImages] = useState<string[] | null>(null);
+    const [ivInitialIndex, setIvInitialIndex] = useState(0);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedWorker, setSelectedWorker] = useState('');
     const [workersList, setWorkersList] = useState<WorkerProfile[]>([]);
@@ -365,13 +368,20 @@ const PendingOrders: React.FC = () => {
                                         <Camera size={16} /> Evidencia Fotográfica
                                     </h4>
                                     {selectedOrder.images && selectedOrder.images.length > 0 ? (
-                                        <div className="evidence-grid">
-                                            {selectedOrder.images.map((img, idx) => (
-                                                <div key={idx} className="evidence-img">
-                                                    <img src={img} alt={`Evidencia ${idx + 1}`} />
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
+                                        {selectedOrder.images.map((img: string, idx: number) => (
+                                            <img
+                                                key={idx}
+                                                src={img}
+                                                alt="Evidencia"
+                                                style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                                                onClick={() => {
+                                                    setViewingImages(selectedOrder.images);
+                                                    setIvInitialIndex(idx);
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
                                     ) : (
                                         <div className="no-evidence">
                                             No se adjuntaron fotografías.
@@ -383,6 +393,14 @@ const PendingOrders: React.FC = () => {
                     </div>
                 )}
             </Modal>
+
+            {viewingImages && (
+                <ImageViewer
+                    images={viewingImages}
+                    onClose={() => setViewingImages(null)}
+                    initialIndex={ivInitialIndex}
+                />
+            )}
         </div>
     );
 };

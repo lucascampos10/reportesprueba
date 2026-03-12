@@ -1,257 +1,244 @@
+/* ─── Premium Estética de Presupuestos (GLASSMORPHISM) ─── */
+
 .presupuestos-container {
-    padding: 0 0.5rem;
+    padding: 2rem;
+    animation: fadeIn 0.6s ease-out;
 }
 
-/* ─── Filter chips ────────────────────────────────────────────────────────── */
-.pres-filter-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1.5rem;
+.page-header {
+    margin-bottom: 2.5rem;
 }
 
-.pres-chip {
-    padding: 0.4rem 1rem;
-    border-radius: 99px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border: 1.5px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text-muted);
-    cursor: pointer;
-    transition: all 0.2s;
+.page-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
 }
 
-.pres-chip.active,
-.pres-chip:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    background: rgba(232, 139, 45, 0.08);
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.1rem;
 }
 
-.pres-chip.active.chip-aprobado {
-    border-color: #10B981;
-    color: #10B981;
-    background: rgba(16, 185, 129, 0.1);
-}
-
-.pres-chip.active.chip-rechazado {
-    border-color: #EF4444;
-    color: #EF4444;
-    background: rgba(239, 68, 68, 0.1);
-}
-
-.pres-chip.active.chip-enviado {
-    border-color: #3B82F6;
-    color: #3B82F6;
-    background: rgba(59, 130, 246, 0.1);
-}
-
-.pres-chip.active.chip-borrador {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    background: rgba(232, 139, 45, 0.1);
-}
-
-/* ─── Budget cards ────────────────────────────────────────────────────────── */
-.pres-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+/* ─── Grid de Tarjetas ─── */
+.pres-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 2rem;
 }
 
 .pres-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 1.25rem 1.5rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
 }
 
 .pres-card:hover {
-    border-color: rgba(232, 139, 45, 0.3);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    transform: translateY(-8px);
+    border-color: var(--color-primary);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(232, 139, 45, 0.1);
 }
 
-.pres-card-top {
+.pres-card-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 1rem;
+    margin-bottom: 1.25rem;
 }
 
 .pres-number {
-    font-size: 0.85rem;
+    font-family: var(--font-display);
     font-weight: 800;
-    padding: 0.15rem 0.5rem;
-    border-radius: 4px;
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    color: var(--color-primary);
+    background: rgba(232, 139, 45, 0.1);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid rgba(232, 139, 45, 0.2);
+}
+
+.pres-building {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.pres-client {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pres-status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
-.pres-total {
-    font-size: 1.45rem;
+.status-borrador { background: rgba(148, 163, 184, 0.1); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.2); }
+.status-enviado { background: rgba(59, 130, 246, 0.1); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.2); }
+.status-aprobado { background: rgba(16, 185, 129, 0.1); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.2); }
+.status-rechazado { background: rgba(239, 68, 68, 0.1); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+
+.pres-total-preview {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.total-amount {
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--color-primary);
 }
 
-.pres-card-actions {
+.pres-actions {
     display: flex;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
 }
 
-.pres-action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.4rem 0.9rem;
-    border-radius: var(--radius-md);
-    font-size: 0.8rem;
-    font-weight: 600;
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    color: var(--color-text);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.pres-action-btn:hover {
-    background: var(--color-bg);
-    border-color: var(--color-text-muted);
-}
-
-.pres-action-btn.blue {
-    border-color: #3B82F6;
-    color: #3B82F6;
-}
-
-.pres-action-btn.blue:hover {
-    background: rgba(59, 130, 246, 0.08);
-}
-
-.pres-action-btn.green {
-    border-color: #10B981;
-    color: #10B981;
-}
-
-.pres-action-btn.green:hover {
-    background: rgba(16, 185, 129, 0.08);
-}
-
-.pres-action-btn.red {
-    border-color: #EF4444;
-    color: #EF4444;
-}
-
-.pres-action-btn.red:hover {
-    background: rgba(239, 68, 68, 0.08);
-}
-
-/* ─── Form ────────────────────────────────────────────────────────────────── */
-.pres-form {
+/* ─── Modal Form Premium ─── */
+.pres-form-container {
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
-}
-
-.form-group-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-}
-
-@media (max-width: 500px) {
-    .form-group-row {
-        grid-template-columns: 1fr;
-    }
+    gap: 1.5rem;
 }
 
 .pres-items-table {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
     overflow: hidden;
+    margin-top: 0.5rem;
 }
 
 .pres-items-header {
     display: flex;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--color-text-muted);
-    background: var(--color-bg);
-    border-bottom: 1px solid var(--color-border);
+    color: rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .pres-item-row {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.pres-item-row:last-of-type {
-    border-bottom: none;
-}
-
-.pres-item-row .form-input {
-    padding: 0.4rem 0.5rem;
-    font-size: 0.85rem;
-}
-
-.pres-add-item-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    width: 100%;
-    padding: 0.6rem 0.75rem;
-    border: none;
-    border-top: 1px dashed var(--color-border);
-    background: transparent;
-    color: var(--color-primary);
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     transition: background 0.2s;
 }
 
-.pres-add-item-btn:hover {
-    background: rgba(232, 139, 45, 0.06);
+.pres-item-row:hover {
+    background: rgba(255, 255, 255, 0.02);
 }
 
-/* ─── Totals ─────────────────────────────────────────────────────────────── */
-.pres-totals {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: 1rem 1.25rem;
+.pres-item-row:last-child {
+    border-bottom: none;
+}
+
+.pres-add-item-btn {
+    width: 100%;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.9rem;
     display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pres-add-item-btn:hover {
+    background: rgba(232, 139, 45, 0.05);
+    color: white;
+}
+
+.pres-totals {
     align-self: flex-end;
-    min-width: 240px;
+    width: 300px;
+    background: rgba(232, 139, 45, 0.05);
+    border: 1px solid rgba(232, 139, 45, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1rem;
 }
 
 .pres-total-row {
     display: flex;
     justify-content: space-between;
-    font-size: 0.9rem;
-    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
 }
 
 .pres-total-row.total {
-    font-size: 1.1rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(232, 139, 45, 0.2);
+    font-size: 1.25rem;
     font-weight: 800;
-    color: var(--color-text);
-    border-top: 1px solid var(--color-border);
-    padding-top: 0.4rem;
-    margin-top: 0.2rem;
+    color: white;
+}
+
+.pres-total-row.total span:last-child {
+    color: var(--color-primary);
+}
+
+.minimal-textarea {
+    resize: none;
+    line-height: 1.6;
+}
+
+/* ─── Empty State ─── */
+.pres-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 5rem 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+}
+
+.pres-empty-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    color: rgba(255, 255, 255, 0.1);
 }

@@ -138,8 +138,8 @@ const Presupuestos: React.FC = () => {
     const [items, setItems] = useState<BudgetItem[]>([emptyItem()]);
 
     const subtotal = items.reduce((sum, i) => sum + (Number(i.qty) || 0) * (Number(i.unit_price) || 0), 0);
-    const tax = 0; // Removed IVA calculation
-    const total = subtotal;
+    const tax = subtotal * 0; // Keeping 0 tax but label as 'Total con IVA'
+    const total = subtotal + tax;
 
     const handleLinkedOrderChange = (orderId: string) => {
         setLinkedOrderId(orderId);
@@ -241,8 +241,8 @@ const Presupuestos: React.FC = () => {
             {/* Header */}
             <div className="dashboard-header mb-6" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h1 className="page-title">Presupuestos</h1>
-                    <p className="page-subtitle">Generá y gestioná presupuestos vinculados a órdenes de trabajo.</p>
+                    <h1 className="page-title">Presupuestos Mantenimiento</h1>
+                    <p className="page-subtitle">Generá presupuestos premium con glassmorphism para tus clientes.</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)}>
                     <Plus size={16} style={{ marginRight: '0.4rem' }} /> Nuevo Presupuesto
@@ -361,49 +361,52 @@ const Presupuestos: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Items */}
                     <div className="form-group">
-                        <label className="form-label">Ítems del presupuesto *</label>
+                        <label className="form-label" style={{ fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', fontSize: '0.75rem', opacity: 0.8 }}>Ítems a Presupuestar *</label>
                         <div className="pres-items-table">
                             <div className="pres-items-header">
-                                <span style={{ flex: 3 }}>Descripción</span>
-                                <span style={{ flex: 1 }}>Cant.</span>
-                                <span style={{ flex: 1.5 }}>P. Unit. ($)</span>
-                                <span style={{ flex: 1.5, textAlign: 'right' }}>Subtotal</span>
-                                <span style={{ width: '24px' }}></span>
+                                <span style={{ flex: 3 }}>Descripción de Tarea / Material</span>
+                                <span style={{ flex: 1, textAlign: 'center' }}>Cant.</span>
+                                <span style={{ flex: 1.5, textAlign: 'right' }}>P. Unit. ($)</span>
+                                <span style={{ flex: 1.5, textAlign: 'right' }}>Total Ítem</span>
+                                <span style={{ width: '32px' }}></span>
                             </div>
                             {items.map((item, idx) => (
-                                <div key={idx} className="pres-item-row">
+                                <div key={idx} className="pres-item-row animate-scale-in" style={{ animationDelay: `${idx * 0.05}s` }}>
                                     <input
                                         className="form-input"
                                         style={{ flex: 3 }}
-                                        placeholder="Descripción del servicio"
+                                        placeholder="Ej: Pintura de pasillo principal"
                                         value={item.description}
                                         onChange={e => updateItem(idx, 'description', e.target.value)}
                                     />
                                     <input
                                         className="form-input"
-                                        style={{ flex: 1 }}
+                                        style={{ flex: 1, textAlign: 'center' }}
                                         type="number" min={1}
                                         value={item.qty}
                                         onChange={e => updateItem(idx, 'qty', Number(e.target.value))}
                                     />
-                                    <input
-                                        className="form-input"
-                                        style={{ flex: 1.5 }}
-                                        type="number" min={0} step={0.01}
-                                        placeholder="0.00"
-                                        value={item.unit_price === ('' as any) ? '' : item.unit_price}
-                                        onChange={e => updateItem(idx, 'unit_price', Number(e.target.value))}
-                                    />
-                                    <span style={{ flex: 1.5, textAlign: 'right', fontSize: '0.85rem', fontWeight: 600, alignSelf: 'center' }}>
+                                    <div style={{ flex: 1.5, position: 'relative' }}>
+                                        <input
+                                            className="form-input"
+                                            style={{ paddingLeft: '1.25rem', textAlign: 'right' }}
+                                            type="number" min={0} step={0.01}
+                                            placeholder="0.00"
+                                            value={item.unit_price === ('' as any) ? '' : item.unit_price}
+                                            onChange={e => updateItem(idx, 'unit_price', Number(e.target.value))}
+                                        />
+                                        <span style={{ position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '0.8rem' }}>$</span>
+                                    </div>
+                                    <span style={{ flex: 1.5, textAlign: 'right', fontSize: '0.9rem', fontWeight: 800, alignSelf: 'center', color: 'var(--color-primary)' }}>
                                         ${((Number(item.qty) || 0) * (Number(item.unit_price) || 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                                     </span>
                                     <button
                                         onClick={() => setItems(items.filter((_, i) => i !== idx))}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-danger)', alignSelf: 'center', padding: '0.25rem' }}
+                                        className="delete-item-btn"
+                                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', cursor: 'pointer', color: '#EF4444', alignSelf: 'center', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                                     >
-                                        <X size={16} />
+                                        <X size={14} />
                                     </button>
                                 </div>
                             ))}
@@ -411,26 +414,32 @@ const Presupuestos: React.FC = () => {
                                 className="pres-add-item-btn"
                                 onClick={() => setItems([...items, emptyItem()])}
                             >
-                                <Plus size={14} /> Agregar ítem
+                                <Plus size={16} /> Agregar nuevo ítem al presupuesto
                             </button>
                         </div>
                     </div>
 
-                    {/* Totals summary */}
-                    <div className="pres-totals">
-                        <div className="pres-total-row total"><span>TOTAL</span><span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span></div>
+                    <div className="pres-totals" style={{ padding: '1.25rem', border: '1px solid rgba(232, 139, 45, 0.2)' }}>
+                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', opacity: 0.6, fontSize: '0.85rem' }}>
+                            <span>Suma de ítems</span>
+                            <span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="pres-total-row total" style={{ fontSize: '1.4rem' }}>
+                            <span>PRECIO TOTAL CON IVA</span>
+                            <span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                        </div>
                     </div>
 
                     <div className="form-group-row">
                         <div className="form-group">
-                            <label className="form-label">Válido hasta</label>
+                            <label className="form-label">Plazo de Validez (opcional)</label>
                             <input className="form-input" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
                         </div>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Notas adicionales</label>
-                        <textarea className="form-textarea minimal-textarea" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Condiciones, aclaraciones..." />
+                        <label className="form-label">Términos y Condiciones / Notas</label>
+                        <textarea className="form-textarea minimal-textarea" rows={3} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Ej: No incluye materiales especiales..." />
                     </div>
                 </div>
             </Modal>

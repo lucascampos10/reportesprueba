@@ -12,7 +12,9 @@ import { useBudgets, formatBudgetId } from '../context/BudgetContext';
 import { useWorkOrders } from '../context/WorkOrderContext';
 import { Card, CardContent } from '../components/Card';
 import { Button } from '../components/Button';
+import { Modal } from '../components/Modal';
 import { PasswordConfirmModal } from '../components/PasswordConfirmModal';
+import ImageViewer from '../components/ImageViewer';
 import { supabase } from '../lib/supabase';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -67,7 +69,27 @@ export const generateBudgetPDF = (budget: any) => {
             `$${(Number(item.qty) * Number(item.unit_price)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`,
         ]),
         headStyles: { fillColor: [26, 60, 52], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [247, 247, 247] },
+        columnStyles: { 0: { cellWidth: 90 }, 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
     });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+
+    // Totals
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Subtotal:`, 140, finalY);
+    doc.text(`$${(budget.subtotal || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`PRECIO TOTAL CON IVA:`, 140, finalY + 8);
+    doc.text(`$${(budget.total || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY + 8, { align: 'right' });
+
+    if (budget.notes) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text('Notas:', 15, finalY);
+        doc.text(doc.splitTextToSize(budget.notes, 110), 15, finalY + 6);
+    }
 
     doc.save(`${formatBudgetId(budget.budgetNumber)}_${budget.building}.pdf`);
 };
@@ -80,6 +102,9 @@ const EdificioDashboard: React.FC = () => {
     // Password confirmation state
     const [isPswModalOpen, setIsPswModalOpen] = useState(false);
     const [selectedBudgetId, setSelectedBudgetId] = useState<string | null>(null);
+    const [viewingOrder, setViewingOrder] = useState<any | null>(null);
+    const [viewingImages, setViewingImages] = useState<string[] | null>(null);
+    const [ivInitialIndex, setIvInitialIndex] = useState(0);
 
     // Filter relevant data
     const pendingBudgets = budgets.filter(b => b.status === 'enviado');
@@ -181,7 +206,7 @@ const EdificioDashboard: React.FC = () => {
                     <div className="action-list">
                         {recentOrders.length > 0 ? (
                             recentOrders.map(order => (
-                                <div key={order.id} className="action-item">
+                                <div key={order.id} className="action-item cursor-pointer" onClick={() => setViewingOrder(order)}>
                                     <div className={`action-indicator ${order.priority === 'alta' ? 'danger' : 'warning'}`}></div>
                                     <div className="action-details">
                                         <p className="action-title">{order.title}</p>
@@ -274,6 +299,81 @@ const EdificioDashboard: React.FC = () => {
                 title="Confirmar Aprobación"
                 message="Para aprobar este presupuesto, por favor ingresá tu contraseña de administrador como confirmación."
             />
+
+            <Modal
+                isOpen={!!viewingOrder}
+                onClose={() => setViewingOrder(null)}
+                title="Detalle del Reporte"
+                maxWidth="600px"
+            >
+                {viewingOrder && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div>
+                            <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Problema</h4>
+                            <p style={{ fontSize: '1.2rem', fontWeight: 700 }}>{viewingOrder.title}</p>
+                            <p style={{ marginTop: '0.5rem', color: 'var(--color-text-muted)' }}>{viewingOrder.description}</p>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                                <h4 style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Prioridad</h4>
+                                <span className={`priority-badge priority-${viewingOrder.priority === 'alta' ? 'high' : viewingOrder.priority === 'media' ? 'medium' : 'low'}`}>
+                                    {viewingOrder.priority.toUpperCase()}
+                                </span>
+                            </div>
+                            <div>
+                                <h4 style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Fecha</h4>
+                                <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{viewingOrder.date}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '1rem' }}>Evidencia Fotográfica</h4>
+                            {viewingOrder.images && viewingOrder.images.length > 0 ? (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                                    {viewingOrder.images.map((img: string, idx: number) => (
+                                        <img 
+                                            key={idx} 
+                                            src={img} 
+                                            alt="Evidencia" 
+                                            style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)' }} 
+                                            onClick={() => {
+                                                setViewingImages(viewingOrder.images);
+                                                setIvInitialIndex(idx);
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            ) : <p style={{ fontSize: '0.85rem', fontStyle: 'italic', color: 'var(--color-text-muted)' }}>No se adjuntaron fotos.</p>}
+                        </div>
+                        {viewingOrder.status === 'resolved' && viewingOrder.resolvedImages && viewingOrder.resolvedImages.length > 0 && (
+                             <div>
+                             <h4 style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '1rem' }}>Trabajo Finalizado</h4>
+                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                                 {viewingOrder.resolvedImages.map((img: string, idx: number) => (
+                                     <img 
+                                         key={idx} 
+                                         src={img} 
+                                         alt="Resultado" 
+                                         style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: '1px solid rgba(255,255,255,0.1)' }} 
+                                         onClick={() => {
+                                             setViewingImages(viewingOrder.resolvedImages);
+                                             setIvInitialIndex(idx);
+                                         }}
+                                     />
+                                 ))}
+                             </div>
+                         </div>
+                        )}
+                    </div>
+                )}
+            </Modal>
+
+            {viewingImages && (
+                <ImageViewer 
+                    images={viewingImages} 
+                    onClose={() => setViewingImages(null)} 
+                    initialIndex={ivInitialIndex}
+                />
+            )}
 
             {activeTab === 'overview' && null}
         </div>

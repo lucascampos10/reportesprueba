@@ -15,17 +15,22 @@ const Header: React.FC = () => {
 
     // User profile state
     const [userName, setUserName] = useState('');
-    const [userRole, setUserRole] = useState('');
+    const [userRole, setUserRole] = useState(''); // Stores the display role like 'Super Administrador' or 'Operario'
+    const [rawUserRole, setRawUserRole] = useState(''); // Stores the raw role from DB like 'admin' or 'operario'
     const dropdownRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
 
     // Filter notifications based on the current user's role
     // Workers (operario) only see notifications targeted at them or 'all'
     // Admins see notifications targeted at 'admin' or 'all'
-    const visibleNotifications = isWorker
-        ? notifications.filter(n => n.audience === 'operario' || n.audience === 'all')
-        : notifications.filter(n => n.audience === 'admin' || n.audience === 'all');
-    const visibleUnreadCount = visibleNotifications.filter(n => !n.read).length;
+    const filteredNotifications = notifications.filter(n => {
+        if (rawUserRole === 'admin') return true; // Admins see all notifications
+        if (rawUserRole === 'operario' && n.audience === 'operario') return true;
+        if (rawUserRole === 'edificio_admin' && n.audience === 'edificio_admin') return true;
+        if (n.audience === 'all') return true; // Everyone sees 'all' notifications
+        return false;
+    });
+    const visibleUnreadCount = filteredNotifications.filter(n => !n.read).length;
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -56,7 +61,8 @@ const Header: React.FC = () => {
                 const { data } = await supabase.from('profiles').select('full_name, role').eq('id', user.id).single();
                 if (data) {
                     setUserName(data.full_name || user.email?.split('@')[0] || '');
-                    setUserRole(data.role === 'admin' ? 'Super Administrador' : 'Operario');
+                    setRawUserRole(data.role);
+                    setUserRole(data.role === 'admin' ? 'Super Administrador' : data.role === 'operario' ? 'Operario' : 'Administrador de Edificio');
                 }
             }
         };
@@ -96,8 +102,8 @@ const Header: React.FC = () => {
                                 )}
                             </div>
                             <div className="notif-dropdown-body">
-                                {visibleNotifications.length > 0 ? (
-                                    visibleNotifications.slice(0, 15).map(notif => (
+                                {filteredNotifications.length > 0 ? (
+                                    filteredNotifications.slice(0, 15).map(notif => (
                                         <div
                                             key={notif.id}
                                             className={`notif-item ${!notif.read ? 'unread' : ''}`}

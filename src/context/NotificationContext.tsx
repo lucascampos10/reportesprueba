@@ -4,11 +4,11 @@ import type { ReactNode } from 'react';
 export interface Notification {
     id: string;
     message: string;
-    type: 'new_order' | 'status_change' | 'info';
+    type: 'new_order' | 'status_change' | 'info' | 'budget_update' | 'payment';
     timestamp: string;
     read: boolean;
     orderId?: string;
-    audience: 'admin' | 'operario' | 'all'; // NEW: who should see this notification
+    audience: 'admin' | 'operario' | 'edificio_admin' | 'all'; // NEW: who should see this notification
 }
 
 interface NotificationContextType {

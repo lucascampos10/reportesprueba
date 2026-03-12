@@ -6,6 +6,7 @@ import {
     Building2, MapPin, Clock, User, Camera, CheckCircle2,
     AlertTriangle, Droplets, FileText, Upload, X, SlidersHorizontal, ChevronLeft, ChevronRight, Download
 } from 'lucide-react';
+import ImageViewer from '../components/ImageViewer';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder, OrderStatus } from '../context/WorkOrderContext';
 import { useBudgets, formatBudgetId } from '../context/BudgetContext';
@@ -38,6 +39,8 @@ const AllOrders: React.FC = () => {
     // Filter & sort state
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [filterStatus, setFilterStatus] = useState<'all' | OrderStatus>('all');
+    const [viewingImages, setViewingImages] = useState<string[] | null>(null);
+    const [ivInitialIndex, setIvInitialIndex] = useState(0);
     const [filterBuilding, setFilterBuilding] = useState('');
     const [filterPriority, setFilterPriority] = useState('');
     const [filterReporter, setFilterReporter] = useState('');
@@ -414,9 +417,18 @@ const AllOrders: React.FC = () => {
                                     <Camera size={16} /> Fotos del Reporte (Antes)
                                 </h4>
                                 {selectedOrder.images.length > 0 ? (
-                                    <div className="photo-grid">
-                                        {selectedOrder.images.map((img, i) => (
-                                            <img key={i} src={img} alt={`Antes ${i + 1}`} className="comparison-photo" />
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
+                                        {selectedOrder.images.map((img: string, idx: number) => (
+                                            <img
+                                                key={idx}
+                                                src={img}
+                                                alt="Evidencia"
+                                                style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                                                onClick={() => {
+                                                    setViewingImages(selectedOrder.images);
+                                                    setIvInitialIndex(idx);
+                                                }}
+                                            />
                                         ))}
                                     </div>
                                 ) : (
@@ -548,6 +560,14 @@ const AllOrders: React.FC = () => {
                     </div>
                 </div>
             </Modal>
+
+            {viewingImages && (
+                <ImageViewer
+                    images={viewingImages}
+                    onClose={() => setViewingImages(null)}
+                    initialIndex={ivInitialIndex}
+                />
+            )}
         </div>
     );
 };

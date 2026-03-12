@@ -228,10 +228,12 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
             throw error;
         }
 
+        const order = orders.find(o => o.id === orderId);
         addNotification(
-            `Orden marcada como resuelta`,
+            `Orden resuelta: "${order?.title || 'Trabajo finalizado'}" en ${order?.building || 'el edificio'}`,
             'status_change',
-            orderId
+            orderId,
+            'edificio_admin'
         );
         fetchOrders();
     };

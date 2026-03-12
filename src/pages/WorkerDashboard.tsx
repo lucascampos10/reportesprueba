@@ -6,6 +6,7 @@ import {
     Building2, MapPin, Clock, User, Camera, CheckCircle2,
     AlertTriangle, Droplets, FileText, ChevronLeft, ChevronRight, Play, Upload, X
 } from 'lucide-react';
+import ImageViewer from '../components/ImageViewer';
 import { useWorkOrders, formatOrderId } from '../context/WorkOrderContext';
 import type { WorkOrder } from '../context/WorkOrderContext';
 import { uploadImage } from '../lib/storage';
@@ -18,6 +19,8 @@ const PAGE_SIZE = 20;
 const WorkerDashboard: React.FC = () => {
     const { orders, updateOrderStatus, closeOrder } = useWorkOrders();
     const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
+    const [viewingImages, setViewingImages] = useState<string[] | null>(null);
+    const [ivInitialIndex, setIvInitialIndex] = useState(0);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     // Start Task Confirmation State
@@ -262,6 +265,23 @@ const WorkerDashboard: React.FC = () => {
                                                 </div>
                                                 <h4 className="worker-order-title">{order.title}</h4>
                                             </div>
+                                            {order.images && order.images.length > 0 && (
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                                    {order.images.map((img: string, idx: number) => (
+                                                        <img
+                                                            key={idx}
+                                                            src={img}
+                                                            alt="Reporte"
+                                                            style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Prevent opening detail modal
+                                                                setViewingImages(order.images);
+                                                                setIvInitialIndex(idx);
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
                                             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                                 <span className={`status-badge badge-${order.status === 'pending' ? 'warning' : 'info'}`}>
                                                     {order.status === 'pending' ? 'Pendiente' : 'En Progreso'}
@@ -535,6 +555,14 @@ const WorkerDashboard: React.FC = () => {
                     </div>
                 </div>
             </Modal>
+
+            {viewingImages && (
+                <ImageViewer 
+                    images={viewingImages} 
+                    onClose={() => setViewingImages(null)} 
+                    initialIndex={ivInitialIndex}
+                />
+            )}
         </div>
     );
 };

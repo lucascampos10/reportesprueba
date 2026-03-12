@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
+import { useNotifications } from './NotificationContext';
+
+export const formatBudgetId = (n: number) => `PRES-${String(n).padStart(3, '0')}`;
 
 export type BudgetStatus = 'borrador' | 'enviado' | 'aprobado' | 'rechazado';
 
@@ -38,6 +41,7 @@ const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
 
 export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [budgets, setBudgets] = useState<Budget[]>([]);
+    const { addNotification } = useNotifications();
 
     const fetchBudgets = async () => {
         const { data: sessionData } = await supabase.auth.getSession();
@@ -116,6 +120,26 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const updateBudgetStatus = async (id: string, status: BudgetStatus) => {
         const { error } = await supabase.from('budgets').update({ status }).eq('id', id);
         if (error) { console.error('Error updating budget status:', error); throw error; }
+        
+        const budget = budgets.find(b => b.id === id);
+        if (budget) {
+            if (status === 'enviado') {
+                addNotification(
+                    `Presupuesto enviado: ${formatBudgetId(budget.budgetNumber)} para ${budget.building}. Asociado a su solicitud de mantenimiento.`,
+                    'budget_update',
+                    budget.orderId || undefined, // Link to the WorkOrder if possible
+                    'edificio_admin'
+                );
+            } else if (status === 'aprobado') {
+                addNotification(
+                    `¡Presupuesto aprobado! ${formatBudgetId(budget.budgetNumber)} - ${budget.building}. Ya puede asignar un técnico.`,
+                    'budget_update',
+                    budget.orderId || undefined,
+                    'admin'
+                );
+            }
+        }
+
         fetchBudgets();
     };
 
@@ -149,5 +173,3 @@ export const useBudgets = () => {
     if (!ctx) throw new Error('useBudgets must be used within BudgetProvider');
     return ctx;
 };
-
-export const formatBudgetId = (n: number) => `PRES-${String(n).padStart(3, '0')}`;

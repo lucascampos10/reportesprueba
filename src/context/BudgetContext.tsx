@@ -44,14 +44,22 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const { addNotification } = useNotifications();
 
     const fetchBudgets = async () => {
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData.session) return;
+        let { data: { session } } = await supabase.auth.getSession();
+        
+        // Retry logic for initial reload recovery
+        if (!session) {
+            await new Promise(r => setTimeout(r, 400));
+            const { data } = await supabase.auth.getSession();
+            session = data.session;
+        }
+
+        if (!session) return;
 
         // 1. Fetch user role and managed buildings
         const { data: profile } = await supabase
             .from('profiles')
             .select('role, managed_buildings')
-            .eq('id', sessionData.session.user.id)
+            .eq('id', session.user.id)
             .single();
 
         let query = supabase
@@ -90,6 +98,13 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     useEffect(() => {
         fetchBudgets();
 
+        // Listen for auth changes to re-fetch budgets (e.g., after login)
+        const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                fetchBudgets();
+            }
+        });
+
         const channel = supabase
             .channel('budgets_realtime')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'budgets' }, () => {
@@ -97,7 +112,10 @@ export const BudgetProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             })
             .subscribe();
 
-        return () => { supabase.removeChannel(channel); };
+        return () => {
+            authListener.unsubscribe();
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const addBudget = async (b: Omit<Budget, 'id' | 'budgetNumber' | 'createdAt'>) => {

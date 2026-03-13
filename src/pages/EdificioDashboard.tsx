@@ -82,7 +82,7 @@ export const generateBudgetPDF = (budget: any) => {
     doc.text(`$${(budget.subtotal || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text(`PRECIO TOTAL:`, 140, finalY + 8);
+    doc.text(`PRECIO TOTAL:`, 125, finalY + 8);
     doc.text(`$${(budget.total || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY + 8, { align: 'right' });
 
     // IVA Note

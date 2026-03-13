@@ -24,6 +24,7 @@ import { BudgetProvider } from './context/BudgetContext';
 import { ReceiptProvider } from './context/ReceiptContext';
 import { ThemeProvider } from './context/ThemeContext';
 import SettingsPage from './pages/Settings';
+import NotFound from './pages/NotFound';
 
 // Guard component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -115,9 +116,8 @@ const App: React.FC = () => {
                   <Route path="presupuestos" element={<EdificioDashboard />} /> {/* For now reuse dashboard or specific list */}
                   <Route path="reportes" element={<EdificioDashboard />} />    {/* For now reuse dashboard or specific list */}
                 </Route>
-
                 {/* Fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </ReceiptProvider>

@@ -100,7 +100,7 @@ const generateBudgetPDF = (budget: any) => {
     doc.text(`$${budget.subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY, { align: 'right' });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text(`PRECIO TOTAL:`, 140, finalY + 8);
+    doc.text(`PRECIO TOTAL:`, 125, finalY + 8);
     doc.text(`$${budget.total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, 195, finalY + 8, { align: 'right' });
 
     // IVA Note
@@ -331,7 +331,7 @@ const Presupuestos: React.FC = () => {
                 isOpen={isModalOpen}
                 onClose={() => { setIsModalOpen(false); resetForm(); }}
                 title={editingBudgetId ? "Editar Presupuesto" : "Nuevo Presupuesto"}
-                maxWidth="840px"
+                maxWidth="1100px"
                 footer={
                     <>
                         <Button variant="outline" onClick={() => { setIsModalOpen(false); resetForm(); }}>Cancelar</Button>
@@ -366,10 +366,10 @@ const Presupuestos: React.FC = () => {
                                 <div className="input-icon absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-10" style={{ pointerEvents: 'none', color: 'var(--color-text-muted)' }}>
                                     <User size={18} />
                                 </div>
-                                <select 
-                                    className="form-select pl-10" 
-                                    value={clientName} 
-                                    onChange={e => setClientName(e.target.value)} 
+                                <select
+                                    className="form-select pl-10"
+                                    value={clientName}
+                                    onChange={e => setClientName(e.target.value)}
                                     required
                                     style={{ paddingLeft: '2.5rem', width: '100%', height: '42px', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)' }}
                                 >
@@ -386,17 +386,17 @@ const Presupuestos: React.FC = () => {
                         <label className="form-label" style={{ fontWeight: 700, letterSpacing: '0.02em', textTransform: 'uppercase', fontSize: '0.75rem', opacity: 0.8 }}>Ítems a Presupuestar *</label>
                         <div className="pres-items-table">
                             <div className="pres-items-header">
-                                <span style={{ flex: 3 }}>Descripción de Tarea / Material</span>
+                                <span style={{ flex: 4 }}>Descripción de Tarea / Material</span>
                                 <span style={{ flex: 1, textAlign: 'center' }}>Cant.</span>
-                                <span style={{ flex: 1.5, textAlign: 'right' }}>P. Unit. ($)</span>
-                                <span style={{ flex: 1.5, textAlign: 'right' }}>Total Ítem</span>
-                                <span style={{ width: '32px' }}></span>
+                                <span style={{ flex: 2, textAlign: 'right' }}>P. Unit. ($)</span>
+                                <span style={{ flex: 2, textAlign: 'right' }}>Total Ítem</span>
+                                <span style={{ width: '40px' }}></span>
                             </div>
                             {items.map((item, idx) => (
                                 <div key={idx} className="pres-item-row animate-scale-in" style={{ animationDelay: `${idx * 0.05}s` }}>
                                     <input
                                         className="form-input"
-                                        style={{ flex: 3 }}
+                                        style={{ flex: 4 }}
                                         placeholder="Ej: Pintura de pasillo principal"
                                         value={item.description}
                                         onChange={e => updateItem(idx, 'description', e.target.value)}
@@ -408,7 +408,7 @@ const Presupuestos: React.FC = () => {
                                         value={item.qty}
                                         onChange={e => updateItem(idx, 'qty', Number(e.target.value))}
                                     />
-                                    <div style={{ flex: 1.5, position: 'relative' }}>
+                                    <div style={{ flex: 2, position: 'relative' }}>
                                         <input
                                             className="form-input"
                                             style={{ paddingLeft: '1.25rem', textAlign: 'right' }}
@@ -419,15 +419,15 @@ const Presupuestos: React.FC = () => {
                                         />
                                         <span style={{ position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5, fontSize: '0.8rem' }}>$</span>
                                     </div>
-                                    <span style={{ flex: 1.5, textAlign: 'right', fontSize: '0.9rem', fontWeight: 800, alignSelf: 'center', color: 'var(--color-primary)' }}>
+                                    <span style={{ flex: 2, textAlign: 'right', fontSize: '0.9rem', fontWeight: 800, alignSelf: 'center', color: 'var(--color-primary)' }}>
                                         ${((Number(item.qty) || 0) * (Number(item.unit_price) || 0)).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                                     </span>
                                     <button
                                         onClick={() => setItems(items.filter((_, i) => i !== idx))}
                                         className="delete-item-btn"
-                                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', cursor: 'pointer', color: '#EF4444', alignSelf: 'center', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
+                                        style={{ background: 'rgba(239, 68, 68, 0.1)', border: 'none', cursor: 'pointer', color: '#EF4444', alignSelf: 'center', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', flexShrink: 0 }}
                                     >
-                                        <X size={14} />
+                                        <X size={16} />
                                     </button>
                                 </div>
                             ))}
@@ -441,7 +441,7 @@ const Presupuestos: React.FC = () => {
                     </div>
 
                     <div className="pres-totals" style={{ padding: '1.25rem', border: '1px solid rgba(232, 139, 45, 0.2)' }}>
-                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', opacity: 0.6, fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', opacity: 0.6, fontSize: '0.85rem' }}>
                             <span>Suma de ítems</span>
                             <span>${total.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
                         </div>
@@ -470,12 +470,12 @@ const Presupuestos: React.FC = () => {
                             <div className="textarea-icon absolute left-3 top-3 text-muted-foreground z-10" style={{ pointerEvents: 'none', color: 'var(--color-text-muted)' }}>
                                 <FileText size={18} />
                             </div>
-                            <textarea 
-                                className="form-textarea minimal-textarea w-full" 
-                                rows={3} 
-                                value={notes} 
-                                onChange={e => setNotes(e.target.value)} 
-                                placeholder="Ej: No incluye materiales especiales..." 
+                            <textarea
+                                className="form-textarea minimal-textarea w-full"
+                                rows={3}
+                                value={notes}
+                                onChange={e => setNotes(e.target.value)}
+                                placeholder="Ej: No incluye materiales especiales..."
                                 style={{ paddingLeft: '2.5rem', backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', color: 'var(--color-text)', paddingTop: '0.75rem' }}
                             />
                         </div>

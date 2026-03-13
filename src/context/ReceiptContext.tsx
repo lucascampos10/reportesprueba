@@ -29,6 +29,14 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const fetchReceipts = async () => {
         try {
             setIsLoading(true);
+            let { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                await new Promise(r => setTimeout(r, 400));
+                const { data } = await supabase.auth.getSession();
+                session = data.session;
+            }
+            if (!session) return;
+
             const { data, error } = await supabase
                 .from('receipts')
                 .select('*')
@@ -55,6 +63,25 @@ export const ReceiptProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     useEffect(() => {
         fetchReceipts();
+
+        // Listen for auth changes to re-fetch receipts (e.g., after login)
+        const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                fetchReceipts();
+            }
+        });
+
+        const channel = supabase
+            .channel('receipts_realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'receipts' }, () => {
+                fetchReceipts();
+            })
+            .subscribe();
+
+        return () => {
+            authListener.unsubscribe();
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const addReceipt = async (receiptData: Omit<Receipt, 'id' | 'receiptNumber' | 'createdAt'>) => {

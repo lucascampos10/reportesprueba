@@ -54,14 +54,22 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
 
     const fetchOrders = async () => {
         // Only fetch if authenticated
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (!sessionData.session) return;
+        let { data: { session } } = await supabase.auth.getSession();
+        
+        // If no session on immediate load, retry once after a small delay (Supabase init fallback)
+        if (!session) {
+            await new Promise(r => setTimeout(r, 400));
+            const { data } = await supabase.auth.getSession();
+            session = data.session;
+        }
+
+        if (!session) return;
 
         // 1. Fetch user role and managed buildings
         const { data: profile } = await supabase
             .from('profiles')
             .select('role, managed_buildings')
-            .eq('id', sessionData.session.user.id)
+            .eq('id', session.user.id)
             .single();
 
         let query = supabase
@@ -129,32 +137,34 @@ export const WorkOrderProvider: React.FC<{ children: ReactNode }> = ({ children 
     useEffect(() => {
         fetchOrders();
 
+        // Listen for auth changes to re-fetch orders (e.g., after login)
+        const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                fetchOrders();
+            }
+        });
+
         // ─── Supabase Realtime ─────────────────────────────────────────────
-        // Subscribe to any INSERT, UPDATE, or DELETE on work_orders.
         const channel = supabase
             .channel('work_orders_realtime')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'work_orders' },
-                (_payload) => {
-                    fetchOrders();
-                }
+                () => fetchOrders()
             )
             .subscribe();
 
-        // Also subscribe to budgets changes so budgetStatus updates in real time
         const budgetsChannel = supabase
             .channel('budgets_orders_sync')
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'budgets' },
-                (_payload) => {
-                    fetchOrders(); // Re-fetch orders to refresh the joined budgetStatus
-                }
+                () => fetchOrders()
             )
             .subscribe();
 
         return () => {
+            authListener.unsubscribe();
             supabase.removeChannel(channel);
             supabase.removeChannel(budgetsChannel);
         };
